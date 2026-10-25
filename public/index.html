@@ -1,0 +1,2631 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>noon Rider Hub | بوابة نون لعمليات وشيفتات الطيارين</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --noon-yellow: #feee00;
+      --noon-yellow-hover: #ebd900;
+      --noon-dark: #121417;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --card-border: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary: #0284c7;
+      --primary-light: #e0f2fe;
+      --success: #16a34a;
+      --success-light: #dcfce7;
+      --danger: #dc2626;
+      --danger-light: #fee2e2;
+      --warning: #d97706;
+      --warning-light: #fef3c7;
+      --badge-bg: #f1f5f9;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --font-family: 'Cairo', 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    [data-theme="dark"] {
+      --bg: #090d16;
+      --card-bg: #131b2e;
+      --card-border: #1e293b;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --primary-light: #1e3a8a;
+      --success-light: #064e3b;
+      --danger-light: #7f1d1d;
+      --warning-light: #78350f;
+      --badge-bg: #1e293b;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: var(--font-family);
+      font-size: 15px;
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: background-color 0.2s, color 0.2s;
+    }
+
+    /* Top Brand Header */
+    header {
+      background: var(--noon-dark);
+      color: #fff;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+      border-bottom: 3px solid var(--noon-yellow);
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      gap: 12px;
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .noon-badge {
+      background: var(--noon-yellow);
+      color: #000;
+      font-weight: 900;
+      font-size: 18px;
+      padding: 2px 10px;
+      border-radius: 8px;
+      letter-spacing: -0.5px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .brand-title {
+      font-size: 16px;
+      font-weight: 800;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #f1f5f9;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s;
+    }
+    .icon-btn:hover { background: #334155; }
+    .icon-btn.active {
+      background: var(--noon-yellow);
+      color: #000;
+      border-color: var(--noon-yellow);
+      font-weight: 700;
+    }
+
+    /* Connection Status Banner */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 16px;
+      font-size: 12px;
+      background: #090d16;
+      color: #94a3b8;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+    }
+    .dot.live { animation: pulse 2s infinite; }
+    .dot.offline { background: #f59e0b; }
+    .dot.error { background: #ef4444; }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+      70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    /* Main Navigation Tabs */
+    nav.main-nav {
+      display: flex;
+      background: #182234;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding: 4px 8px;
+      gap: 4px;
+    }
+    nav.main-nav::-webkit-scrollbar { display: none; }
+
+    .nav-btn {
+      flex: 1;
+      min-width: fit-content;
+      background: transparent;
+      color: #cbd5e1;
+      border: none;
+      padding: 8px 14px;
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .nav-btn.active {
+      background: var(--noon-yellow);
+      color: #000;
+      font-weight: 800;
+      box-shadow: var(--shadow-sm);
+    }
+    .nav-badge {
+      background: var(--danger);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 999px;
+    }
+
+    /* Alert Banner for Overdue Shifts */
+    .overdue-alert {
+      background: #991b1b;
+      color: #fff;
+      padding: 10px 16px;
+      font-size: 13.5px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      animation: alertPulse 1.5s infinite;
+      cursor: pointer;
+    }
+    @keyframes alertPulse {
+      0%, 100% { background: #991b1b; }
+      50% { background: #b91c1c; }
+    }
+
+    /* Layout Container */
+    main {
+      flex: 1;
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Form Inputs */
+    .form-group {
+      margin-bottom: 14px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+    .form-control {
+      width: 100%;
+      padding: 11px 14px;
+      font-family: inherit;
+      font-size: 14.5px;
+      color: var(--text-main);
+      background: var(--bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      outline: none;
+      transition: all 0.2s;
+    }
+    .form-control:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+      background: var(--card-bg);
+    }
+    .form-control.error {
+      border-color: var(--danger);
+      background: #fef2f2;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 600px) {
+      .form-row { grid-template-columns: 1fr; }
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--danger);
+    }
+    .checkbox-label input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--danger);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 18px;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 800;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .btn-block { width: 100%; }
+
+    .btn-noon {
+      background: var(--noon-yellow);
+      color: #000;
+    }
+    .btn-noon:hover {
+      background: var(--noon-yellow-hover);
+      box-shadow: 0 4px 12px rgba(254, 238, 0, 0.3);
+    }
+
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { opacity: 0.9; }
+
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover { opacity: 0.9; }
+
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { opacity: 0.9; }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+    }
+    .btn-outline:hover { background: var(--badge-bg); }
+
+    .btn-sm {
+      padding: 6px 10px;
+      font-size: 12.5px;
+      font-weight: 700;
+    }
+
+    /* Status Pills and Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .badge-new { background: var(--warning-light); color: var(--warning); border: 1px solid rgba(217, 119, 6, 0.2); }
+    .badge-done { background: var(--success-light); color: var(--success); border: 1px solid rgba(22, 163, 74, 0.2); }
+    .badge-rejected { background: var(--danger-light); color: var(--danger); border: 1px solid rgba(220, 38, 38, 0.2); }
+    .badge-urgent { background: #fee2e2; color: #b91c1c; border: 1px solid #f87171; animation: pulse 2s infinite; }
+    .badge-noon { background: var(--noon-yellow); color: #000; font-weight: 800; }
+
+    /* Branch Filter Chips */
+    .branch-chips {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin-bottom: 12px;
+      scrollbar-width: thin;
+    }
+    .chip {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .chip:hover { border-color: var(--primary); }
+    .chip.active {
+      background: var(--noon-dark);
+      color: #fff;
+      border-color: var(--noon-dark);
+    }
+    [data-theme="dark"] .chip.active {
+      background: var(--noon-yellow);
+      color: #000;
+      border-color: var(--noon-yellow);
+    }
+    .chip-count {
+      background: var(--danger);
+      color: #fff;
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 999px;
+    }
+
+    /* Request Item Card */
+    .req-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-right: 5px solid var(--primary);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    html[dir="ltr"] .req-card {
+      border-right: 1px solid var(--card-border);
+      border-left: 5px solid var(--primary);
+    }
+    .req-card.status-new { border-right-color: var(--warning); }
+    html[dir="ltr"] .req-card.status-new { border-left-color: var(--warning); }
+    .req-card.status-done { border-right-color: var(--success); opacity: 0.85; }
+    html[dir="ltr"] .req-card.status-done { border-left-color: var(--success); }
+    .req-card.status-rejected { border-right-color: var(--danger); opacity: 0.75; }
+    html[dir="ltr"] .req-card.status-rejected { border-left-color: var(--danger); }
+    .req-card.urgent { border-right-color: var(--danger); background: linear-gradient(to left, var(--card-bg), rgba(254, 226, 226, 0.2)); }
+
+    .req-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .rider-name {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+    .rider-id {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: 0.5px;
+      direction: ltr;
+      display: inline-block;
+    }
+
+    .req-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 6px 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin: 10px 0;
+      padding: 8px;
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+    }
+    .meta-item b {
+      color: var(--text-main);
+      font-weight: 700;
+    }
+
+    .req-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--card-border);
+    }
+
+    /* Shift Countdown Progress Bar */
+    .shift-bar-wrap {
+      margin: 10px 0;
+    }
+    .shift-bar-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .shift-bar {
+      height: 8px;
+      background: var(--badge-bg);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--card-border);
+    }
+    .shift-bar-fill {
+      height: 100%;
+      background: var(--success);
+      width: 0%;
+      transition: width 0.5s;
+    }
+    .shift-bar-fill.warning { background: var(--warning); }
+    .shift-bar-fill.danger { background: var(--danger); animation: pulse 1s infinite; }
+
+    /* Manager Dashboard Stats */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .kpi-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-sm);
+    }
+    .kpi-val {
+      font-size: 32px;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+    .kpi-label {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    /* Heatmap Table */
+    .heatmap-wrap {
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+    .heatmap-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .heatmap-table th, .heatmap-table td {
+      padding: 6px;
+      text-align: center;
+      border: 1px solid var(--card-border);
+    }
+    .heatmap-table th { background: var(--bg); font-weight: 700; }
+    .heatmap-cell {
+      height: 24px;
+      min-width: 24px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 11px;
+    }
+
+    /* Toast Notification */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--noon-dark);
+      color: #fff;
+      padding: 12px 22px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 700;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 2px solid var(--noon-yellow);
+      transition: opacity 0.3s, transform 0.3s;
+    }
+    #toast.hidden { display: none; }
+
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 1000;
+    }
+    .modal-overlay.hidden { display: none; }
+    .modal-box {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      max-width: 500px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 22px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Branch selector grid */
+    .branch-select-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      max-height: 260px;
+      overflow-y: auto;
+      padding: 6px;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 14px;
+    }
+    .branch-select-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .branch-select-item:hover { background: var(--badge-bg); }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 40px 16px;
+      color: var(--text-muted);
+    }
+    .empty-icon { font-size: 40px; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+
+  <!-- Brand Header -->
+  <header>
+    <div class="header-top">
+      <div class="brand-wrap">
+        <span class="noon-badge">noon</span>
+        <div class="brand-title">
+          <span id="txt-app-title">بوابة نون للطيارين</span>
+          <span class="brand-subtitle" id="txt-app-subtitle">Rider Operations & Dispatch Hub</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <!-- Language Switcher -->
+        <button id="btn-lang" class="icon-btn" title="تغيير اللغة | Switch Language">
+          🌐 <span id="txt-lang-lbl">English</span>
+        </button>
+        <!-- Dark Mode Toggle -->
+        <button id="btn-theme" class="icon-btn" title="تغيير المظهر | Toggle Theme">
+          🌙
+        </button>
+        <!-- Sound alert toggle -->
+        <button id="btn-sound" class="icon-btn active" title="الصوت | Audio Alerts">
+          🔔
+        </button>
+        <!-- Screen WakeLock toggle -->
+        <button id="btn-wake" class="icon-btn" title="إبقاء الشاشة مضاءة | Keep Screen Awake">
+          🔆
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Connection Status Bar -->
+    <div class="status-bar">
+      <div class="status-indicator">
+        <span class="dot live" id="sync-dot"></span>
+        <span id="sync-text">متصل بالسيرفر المباشر (مزامنة فورية)</span>
+      </div>
+      <div id="role-pill-wrap">
+        <button id="btn-role-toggle" class="icon-btn" style="padding: 2px 8px; font-size: 11px;">
+          🔑 <span id="txt-role-state">دخول فريق الفتح</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Navigation Bar -->
+    <nav class="main-nav" id="main-nav">
+      <button class="nav-btn active" data-tab="tab-form" id="nav-form">
+        📝 <span data-i18n="nav_submit">إرسال طلب</span>
+      </button>
+      <button class="nav-btn" data-tab="tab-my" id="nav-my">
+        📋 <span data-i18n="nav_my">طلباتي</span>
+      </button>
+      <button class="nav-btn" data-tab="tab-board" id="nav-board" style="display:none;">
+        📥 <span data-i18n="nav_board">لوحة الطلبات</span>
+        <span class="nav-badge" id="badge-board" style="display:none;">0</span>
+      </button>
+      <button class="nav-btn" data-tab="tab-shifts" id="nav-shifts" style="display:none;">
+        ⏱ <span data-i18n="nav_shifts">الشيفتات النشطة</span>
+        <span class="nav-badge" id="badge-shifts" style="display:none;">0</span>
+      </button>
+      <button class="nav-btn" data-tab="tab-pilots" id="nav-pilots" style="display:none;">
+        👥 <span data-i18n="nav_pilots">دليل الطيارين</span>
+      </button>
+      <button class="nav-btn" data-tab="tab-manager" id="nav-manager" style="display:none;">
+        📊 <span data-i18n="nav_manager">لوحة المدير</span>
+      </button>
+    </nav>
+
+    <!-- Overdue Alert Ribbon -->
+    <div id="overdue-ribbon" class="overdue-alert" style="display:none;">
+      <span>🚨 <span id="overdue-text">يوجد شيفتات منتهية تحتاج للإغلاق الفوري!</span></span>
+      <span style="text-decoration: underline; font-size: 12px;" data-i18n="btn_inspect">فحص الآن ←</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- ==================== TAB 1: SUBMIT REQUEST (LA & SUPERVISOR) ==================== -->
+    <section id="tab-form">
+      <div class="card">
+        <div class="card-title">
+          <span>🛵 <span data-i18n="form_title">إرسال طلب فتح / قفل شيفت لطيار</span></span>
+          <span class="badge badge-noon">noon Logistics</span>
+        </div>
+
+        <form id="rider-form" onsubmit="return false;">
+          <!-- LA Name Field (Requested) -->
+          <div class="form-group">
+            <label for="f_la_name">
+              👤 <span data-i18n="lbl_la_name">اسم الـ LA (Logistics Associate الطالب)</span>
+              <span style="color:var(--danger)">*</span>
+            </label>
+            <input type="text" id="f_la_name" class="form-control" data-i18n-ph="ph_la_name" placeholder="اكتب اسمك كـ LA مسؤول..." required autocomplete="name">
+          </div>
+
+          <!-- Branch Selection -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="f_branch">
+                📍 <span data-i18n="lbl_branch">الفرع</span>
+                <span style="color:var(--danger)">*</span>
+              </label>
+              <select id="f_branch" class="form-control" required>
+                <option value="" data-i18n="opt_select_branch">-- اختار الفرع --</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="f_office">
+                🏢 <span data-i18n="lbl_office">المكتب / الشركة الوسيطة</span>
+              </label>
+              <input type="text" id="f_office" class="form-control" data-i18n-ph="ph_office" placeholder="مثال: نون داخلي، مكتب النيل..." list="office-suggestions">
+              <datalist id="office-suggestions"></datalist>
+            </div>
+          </div>
+
+          <!-- Rider Name & Rider ID -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="f_rider_name">
+                🛵 <span data-i18n="lbl_rider_name">اسم الطيار بالكامل</span>
+                <span style="color:var(--danger)">*</span>
+              </label>
+              <input type="text" id="f_rider_name" class="form-control" data-i18n-ph="ph_rider_name" placeholder="الاسم الثلاثي أو الرباعي للطيار..." required>
+            </div>
+            <div class="form-group">
+              <label for="f_rider_id">
+                🆔 <span data-i18n="lbl_rider_id">كود الطيار (Rider ID)</span>
+                <span style="color:var(--danger)">*</span>
+              </label>
+              <input type="text" id="f_rider_id" class="form-control" inputmode="numeric" data-i18n-ph="ph_rider_id" placeholder="أرقام فقط (مثال: 104852)" required>
+            </div>
+          </div>
+
+          <!-- Rider Phone Number (Requested) -->
+          <div class="form-group">
+            <label for="f_rider_phone">
+              📞 <span data-i18n="lbl_rider_phone">رقم موبايل الطيار (للاتصال والواتساب)</span>
+            </label>
+            <input type="tel" id="f_rider_phone" class="form-control" inputmode="tel" data-i18n-ph="ph_rider_phone" placeholder="مثال: 01012345678 أو 011 / 012 / 015">
+          </div>
+
+          <!-- Request Type -->
+          <div class="form-group">
+            <label for="f_req_type">
+              ⚡ <span data-i18n="lbl_req_type">نوع الطلب</span>
+              <span style="color:var(--danger)">*</span>
+            </label>
+            <select id="f_req_type" class="form-control" required>
+              <option value="فتح شيفت" data-i18n="opt_open_shift">🟢 فتح شيفت (Open Shift)</option>
+              <option value="قفل شيفت" data-i18n="opt_close_shift">🔴 قفل شيفت (Close Shift)</option>
+              <option value="تعديل شيفت" data-i18n="opt_edit_shift">🟡 تعديل شيفت (Modify Shift)</option>
+              <option value="إيقاف طيار" data-i18n="opt_suspend_rider">⛔ إيقاف طيار (Suspend Rider)</option>
+              <option value="فك حظر" data-i18n="opt_unblock_rider">🔓 فك حظر طيار (Unblock Rider)</option>
+              <option value="طلب آخر" data-i18n="opt_other_request">💬 طلب آخر (Other)</option>
+            </select>
+          </div>
+
+          <!-- Notes -->
+          <div class="form-group">
+            <label for="f_notes">
+              📝 <span data-i18n="lbl_notes">ملاحظات إضافية (اختياري)</span>
+            </label>
+            <textarea id="f_notes" class="form-control" rows="2" data-i18n-ph="ph_notes" placeholder="أي تفاصيل يحتاجها المشرف..."></textarea>
+          </div>
+
+          <!-- Urgent Checkbox -->
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="f_urgent">
+              🚨 <span data-i18n="lbl_urgent">طلب عاجل جداً (يظهر بأولوية قصوى للمشرفين)</span>
+            </label>
+          </div>
+
+          <button type="submit" id="btn-submit-req" class="btn btn-noon btn-block">
+            🚀 <span data-i18n="btn_submit">إرسال الطلب الآن</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- Success Confirmation Card -->
+      <div id="submit-success-card" class="card" style="display:none; text-align:center; border: 2px solid var(--success);">
+        <div style="font-size: 48px; margin-bottom: 8px;">✅</div>
+        <h3 style="color: var(--success); margin-bottom: 6px;" data-i18n="msg_submitted_title">تم إرسال الطلب بنجاح!</h3>
+        <p style="color: var(--text-muted); margin-bottom: 14px;" data-i18n="msg_submitted_sub">تم توجيه الطلب إلى المشرف المسؤول عن الفرع وسيتم المعالجة فوراً.</p>
+        <div style="background:var(--bg); padding:10px; border-radius:var(--radius-sm); font-family:monospace; font-size:16px; font-weight:bold; margin-bottom:14px;" id="submitted-code">
+          REF: #0000
+        </div>
+        <button id="btn-new-req" class="btn btn-noon">
+          ➕ <span data-i18n="btn_submit_another">إرسال طلب جديد</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: MY SUBMISSIONS ==================== -->
+    <section id="tab-my" style="display:none;">
+      <div class="card">
+        <div class="card-title">
+          <span>📋 <span data-i18n="my_reqs_title">سجل طلباتي المرسلة</span></span>
+          <button id="btn-refresh-my" class="btn btn-outline btn-sm">🔄 <span data-i18n="btn_refresh">تحديث</span></button>
+        </div>
+        <div id="my-requests-list">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: OPENER DISPATCH BOARD ==================== -->
+    <section id="tab-board" style="display:none;">
+      <!-- Opener Branch Assignment Toolbar -->
+      <div class="card" style="padding: 12px 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <div style="font-size: 13px; color: var(--text-muted); font-weight: 700;">
+              👤 <span data-i18n="lbl_opener_name">المشرف الحالي</span>: <b id="current-opener-name" style="color:var(--text-main)">--</b>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted);">
+              📍 <span data-i18n="lbl_my_branches">فروعي المسندة</span>: <span id="my-branches-summary">--</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button id="btn-edit-my-branches" class="btn btn-outline btn-sm">
+              ⚙️ <span data-i18n="btn_configure_branches">تحديد فروعي</span>
+            </button>
+            <button id="btn-quick-open-modal" class="btn btn-noon btn-sm">
+              ➕ <span data-i18n="btn_direct_open">فتح مباشر</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Branch Filter Chips -->
+      <div class="branch-chips" id="board-branch-chips">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Filters & Search Bar -->
+      <div class="card" style="padding: 12px;">
+        <div class="form-row">
+          <div>
+            <input type="text" id="board-search" class="form-control" data-i18n-ph="ph_search" placeholder="🔍 بحث باسم الطيار، كود ID، رقم الهاتف، أو الـ LA...">
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <select id="board-status-filter" class="form-control">
+              <option value="new" data-i18n="filter_status_new">طلبات جديدة معلقة</option>
+              <option value="all" data-i18n="filter_status_all">جميع الحالات</option>
+              <option value="done" data-i18n="filter_status_done">تم تنفيذها</option>
+              <option value="rejected" data-i18n="filter_status_rejected">مرفوضة</option>
+            </select>
+            <select id="board-scope-filter" class="form-control">
+              <option value="mine" data-i18n="filter_scope_mine">فروعي فقط</option>
+              <option value="all" data-i18n="filter_scope_all">كل فروع نون</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Requests Board List -->
+      <div id="board-requests-list">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: ACTIVE SHIFTS TRACKER ==================== -->
+    <section id="tab-shifts" style="display:none;">
+      <div class="card">
+        <div class="card-title">
+          <span>⏱ <span data-i18n="shifts_title">متابعة الشيفتات النشطة (مدة الوردية 11 ساعة)</span></span>
+          <span class="badge badge-done" id="active-shifts-count">0 طيار نشط</span>
+        </div>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;" data-i18n="shifts_desc">
+          العداد التنازلي يحسب بدقة وقت انتهاء الشيفت. عند اكتمال الـ 11 ساعة يظهر تنبيه أحمر فوري لإغلاق الشيفت.
+        </p>
+
+        <div id="shifts-container">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 5: PILOT DIRECTORY ==================== -->
+    <section id="tab-pilots" style="display:none;">
+      <div class="card">
+        <div class="card-title">
+          <span>👥 <span data-i18n="pilots_dir_title">دليل طيارين الفروع والبحث السريع</span></span>
+          <button id="btn-add-pilot-modal" class="btn btn-noon btn-sm">➕ <span data-i18n="btn_add_pilot">إضافة طيار جديد</span></button>
+        </div>
+
+        <div class="form-group">
+          <input type="text" id="pilot-dir-search" class="form-control" data-i18n-ph="ph_search_pilots" placeholder="🔍 اكتب كود الطيار، الاسم، رقم الموبايل، أو الفرع...">
+        </div>
+
+        <div id="pilots-list-container">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 6: EXECUTIVE MANAGER DASHBOARD ==================== -->
+    <section id="tab-manager" style="display:none;">
+      <!-- Manager Top Banner -->
+      <div class="card" style="background: linear-gradient(135deg, var(--noon-dark), #1e293b); color:#fff; border:none;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h2 style="font-size: 20px; font-weight: 900; color: var(--noon-yellow);">📊 مركز تحكم قيادة العمليات (Executive Ops Hub)</h2>
+            <div style="font-size: 13px; color: #cbd5e1;" id="mgr-current-date">اليوم | تقرير حي ومباشر</div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button id="btn-export-csv" class="btn btn-noon btn-sm">⬇️ <span data-i18n="btn_export_csv">تصدير إكسيل (Excel / CSV)</span></button>
+            <button id="btn-manage-branches-modal" class="btn btn-outline btn-sm" style="color:#fff; border-color:#475569;">⚙️ <span data-i18n="btn_manage_branches">إدارة الفروع</span></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card" style="border-right: 4px solid var(--success);">
+          <div class="kpi-val" id="kpi-active-riders" style="color:var(--success);">0</div>
+          <div class="kpi-label" data-i18n="kpi_active">طيار على الوردية حالياً</div>
+        </div>
+        <div class="kpi-card" style="border-right: 4px solid var(--warning);">
+          <div class="kpi-val" id="kpi-pending-reqs" style="color:var(--warning);">0</div>
+          <div class="kpi-label" data-i18n="kpi_pending">طلبات معلقة في الانتظار</div>
+        </div>
+        <div class="kpi-card" style="border-right: 4px solid var(--danger);">
+          <div class="kpi-val" id="kpi-overdue-shifts" style="color:var(--danger);">0</div>
+          <div class="kpi-label" data-i18n="kpi_overdue">شيفتات متجاوزة 11 ساعة</div>
+        </div>
+        <div class="kpi-card" style="border-right: 4px solid var(--primary);">
+          <div class="kpi-val" id="kpi-avg-sla" style="color:var(--primary);">0.0 د</div>
+          <div class="kpi-label" data-i18n="kpi_sla">متوسط سرعة استجابة الفتح</div>
+        </div>
+      </div>
+
+      <!-- Hourly Distribution Bar Chart -->
+      <div class="card">
+        <div class="card-title">
+          <span>📈 <span data-i18n="chart_hourly_title">توزيع كثافة الطيارين على مدار اليوم (24 ساعة)</span></span>
+        </div>
+        <div id="hourly-chart-container" style="padding: 10px 0;">
+          <!-- Rendered by SVG -->
+        </div>
+      </div>
+
+      <!-- Branch Heatmap Table -->
+      <div class="card">
+        <div class="card-title">
+          <span>🔥 <span data-i18n="heatmap_title">خريطة تغطية الفروع ومراقبة الأداء</span></span>
+        </div>
+        <div class="heatmap-wrap">
+          <table class="heatmap-table" id="branch-perf-table">
+            <thead>
+              <tr>
+                <th data-i18n="th_branch">الفرع</th>
+                <th data-i18n="th_assigned_opener">المشرف المسؤول</th>
+                <th data-i18n="th_active_riders">نشط حالياً</th>
+                <th data-i18n="th_pending_reqs">معلق</th>
+                <th data-i18n="th_overdue">متأخر (>11س)</th>
+                <th data-i18n="th_status">الحالة</th>
+              </tr>
+            </thead>
+            <tbody id="branch-perf-tbody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Top Opener Leaderboard -->
+      <div class="card">
+        <div class="card-title">
+          <span>🏆 <span data-i18n="leaderboard_title">لوحة شرف سرعة الاستجابة لفريق الفتح</span></span>
+        </div>
+        <div id="opener-leaderboard-container">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- Modal: Direct Shift Open -->
+  <div id="modal-quick-open" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-title">
+        <span>⚡ <span data-i18n="modal_direct_title">تسجيل فتح مباشر للطيار</span></span>
+        <button class="btn btn-outline btn-sm close-modal">✖</button>
+      </div>
+      <form id="direct-open-form" onsubmit="return false;">
+        <div class="form-group">
+          <label data-i18n="lbl_rider_id">كود الطيار (ID)</label>
+          <input type="text" id="dir_pid" class="form-control" inputmode="numeric" required placeholder="أرقام فقط...">
+        </div>
+        <div class="form-group">
+          <label data-i18n="lbl_rider_name">اسم الطيار</label>
+          <input type="text" id="dir_name" class="form-control" placeholder="اسم الطيار...">
+        </div>
+        <div class="form-group">
+          <label data-i18n="lbl_branch">الفرع</label>
+          <select id="dir_branch" class="form-control" required></select>
+        </div>
+        <div class="form-group">
+          <label data-i18n="lbl_rider_phone">رقم الموبايل</label>
+          <input type="tel" id="dir_phone" class="form-control" placeholder="01xxxxxxxxx...">
+        </div>
+        <div class="form-group">
+          <label data-i18n="lbl_req_type">نوع الإجراء</label>
+          <select id="dir_rt" class="form-control">
+            <option value="فتح شيفت">🟢 فتح شيفت</option>
+            <option value="قفل شيفت">🔴 قفل شيفت</option>
+          </select>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+          <button type="button" class="btn btn-outline close-modal" data-i18n="btn_cancel">إلغاء</button>
+          <button type="submit" class="btn btn-noon" data-i18n="btn_save">حفظ وتأكيد</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Edit Opener Branches -->
+  <div id="modal-opener-branches" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-title">
+        <span>⚙️ <span data-i18n="modal_my_branches_title">تخصيص الفروع المسندة لك</span></span>
+        <button class="btn btn-outline btn-sm close-modal">✖</button>
+      </div>
+      <div class="form-group">
+        <label data-i18n="lbl_your_name">اسمك كمشرف فتح</label>
+        <input type="text" id="cfg_opener_name" class="form-control" placeholder="اسمك الذي سيظهر للمدير والزملاء...">
+      </div>
+      <label data-i18n="lbl_select_branches_desc">حدد الفروع التي تتولى فتح شيفتاتها (يتم تصفية اللوحة عليها تلقائياً):</label>
+      <div class="branch-select-grid" id="opener-branch-checkboxes">
+        <!-- Rendered by JS -->
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+        <button type="button" class="btn btn-outline close-modal" data-i18n="btn_cancel">إلغاء</button>
+        <button type="button" id="btn-save-opener-branches" class="btn btn-noon" data-i18n="btn_save_branches">حفظ الفروع</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Reject Reason -->
+  <div id="modal-reject-reason" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-title">
+        <span>❌ <span data-i18n="modal_reject_title">تحديد سبب رفض الطلب</span></span>
+        <button class="btn btn-outline btn-sm close-modal">✖</button>
+      </div>
+      <div class="form-group">
+        <label data-i18n="lbl_quick_reasons">أسباب سريعة شائعة:</label>
+        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;">
+          <button type="button" class="chip chip-reason" data-r="الطيار غير مسجل">الطيار غير مسجل</button>
+          <button type="button" class="chip chip-reason" data-r="الشيفت مفتوح بالفعل">الشيفت مفتوح بالفعل</button>
+          <button type="button" class="chip chip-reason" data-r="الطلب مكرر">الطلب مكرر</button>
+          <button type="button" class="chip chip-reason" data-r="بيانات ناقصة أو غير صحيحة">بيانات ناقصة</button>
+          <button type="button" class="chip chip-reason" data-r="خارج مواعيد العمل الرسمية">خارج مواعيد العمل</button>
+        </div>
+        <label data-i18n="lbl_reason_detail">السبب بالتفصيل:</label>
+        <input type="text" id="reject-reason-input" class="form-control" placeholder="اكتب سبب الرفض...">
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" class="btn btn-outline close-modal" data-i18n="btn_cancel">إلغاء</button>
+        <button type="button" id="btn-confirm-reject" class="btn btn-danger" data-i18n="btn_confirm_reject">تأكيد الرفض</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Manage All Branches (Manager Mode) -->
+  <div id="modal-manage-branches" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-title">
+        <span>📍 <span data-i18n="modal_branches_mgmt">إدارة قائمة الفروع المعتمدة</span></span>
+        <button class="btn btn-outline btn-sm close-modal">✖</button>
+      </div>
+      <div class="form-group">
+        <label data-i18n="lbl_branches_textarea">أدخل كل فرع في سطر منفصل:</label>
+        <textarea id="mgr-branches-textarea" class="form-control" rows="8" placeholder="فرع التجمع&#10;فرع المعادي&#10;..."></textarea>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" class="btn btn-outline close-modal" data-i18n="btn_cancel">إلغاء</button>
+        <button type="button" id="btn-save-all-branches" class="btn btn-noon" data-i18n="btn_save_all_branches">تحديث قائمة الفروع</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add / Edit Pilot -->
+  <div id="modal-add-pilot" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-title">
+        <span>👤 <span data-i18n="modal_pilot_title">إضافة / تسجيل طيار جديد</span></span>
+        <button class="btn btn-outline btn-sm close-modal">✖</button>
+      </div>
+      <form id="add-pilot-form" onsubmit="return false;">
+        <div class="form-group">
+          <label data-i18n="lbl_rider_name">اسم الطيار</label>
+          <input type="text" id="p_name" class="form-control" required placeholder="الاسم ثلاثي...">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label data-i18n="lbl_rider_id">كود ID</label>
+            <input type="text" id="p_pid" class="form-control" inputmode="numeric" required placeholder="أرقام فقط...">
+          </div>
+          <div class="form-group">
+            <label data-i18n="lbl_branch">الفرع الأساسي</label>
+            <select id="p_branch" class="form-control" required></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label data-i18n="lbl_rider_phone">رقم الموبايل</label>
+            <input type="tel" id="p_phone" class="form-control" placeholder="01xxxxxxxxx...">
+          </div>
+          <div class="form-group">
+            <label data-i18n="lbl_office">المكتب / الشركة</label>
+            <input type="text" id="p_office" class="form-control" placeholder="مثال: نون مباشر...">
+          </div>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:14px;">
+          <button type="button" class="btn btn-outline close-modal" data-i18n="btn_cancel">إلغاء</button>
+          <button type="submit" class="btn btn-noon" data-i18n="btn_save_pilot">حفظ الطيار</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="hidden">
+    <span id="toast-text"></span>
+  </div>
+
+  <!-- Core Application Script -->
+  <script>
+    /* =================================================================
+       noon Rider Hub - Full Bilingual Translation Dictionary
+       ================================================================= */
+    const I18N = {
+      ar: {
+        app_title: "بوابة نون للطيارين",
+        app_subtitle: "Rider Operations & Dispatch Hub",
+        lang_lbl: "English",
+        nav_submit: "إرسال طلب",
+        nav_my: "طلباتي",
+        nav_board: "لوحة الطلبات",
+        nav_shifts: "الشيفتات النشطة",
+        nav_pilots: "دليل الطيارين",
+        nav_manager: "لوحة المدير",
+        form_title: "إرسال طلب فتح / قفل شيفت لطيار",
+        lbl_la_name: "اسم الـ LA (Logistics Associate الطالب)",
+        ph_la_name: "اكتب اسمك كـ LA مسؤول...",
+        lbl_branch: "الفرع",
+        opt_select_branch: "-- اختار الفرع --",
+        lbl_office: "المكتب / الشركة الوسيطة",
+        ph_office: "مثال: نون داخلي، مكتب النيل...",
+        lbl_rider_name: "اسم الطيار بالكامل",
+        ph_rider_name: "الاسم الثلاثي أو الرباعي للطيار...",
+        lbl_rider_id: "كود الطيار (Rider ID)",
+        ph_rider_id: "أرقام فقط (مثال: 104852)",
+        lbl_rider_phone: "رقم موبايل الطيار (للاتصال والواتساب)",
+        ph_rider_phone: "مثال: 01012345678 أو 011 / 012 / 015",
+        lbl_req_type: "نوع الطلب",
+        opt_open_shift: "🟢 فتح شيفت (Open Shift)",
+        opt_close_shift: "🔴 قفل شيفت (Close Shift)",
+        opt_edit_shift: "🟡 تعديل شيفت (Modify Shift)",
+        opt_suspend_rider: "⛔ إيقاف طيار (Suspend Rider)",
+        opt_unblock_rider: "🔓 فك حظر طيار (Unblock Rider)",
+        opt_other_request: "💬 طلب آخر (Other)",
+        lbl_notes: "ملاحظات إضافية (اختياري)",
+        ph_notes: "أي تفاصيل يحتاجها المشرف...",
+        lbl_urgent: "طلب عاجل جداً (يظهر بأولوية قصوى للمشرفين)",
+        btn_submit: "إرسال الطلب الآن",
+        msg_submitted_title: "تم إرسال الطلب بنجاح!",
+        msg_submitted_sub: "تم توجيه الطلب إلى المشرف المسؤول عن الفرع وسيتم المعالجة فوراً.",
+        btn_submit_another: "إرسال طلب جديد",
+        my_reqs_title: "سجل طلباتي المرسلة",
+        btn_refresh: "تحديث",
+        lbl_opener_name: "المشرف الحالي",
+        lbl_my_branches: "فروعي المسندة",
+        btn_configure_branches: "تحديد فروعي",
+        btn_direct_open: "فتح مباشر",
+        ph_search: "🔍 بحث باسم الطيار، كود ID، رقم الهاتف، أو الـ LA...",
+        filter_status_new: "طلبات جديدة معلقة",
+        filter_status_all: "جميع الحالات",
+        filter_status_done: "تم تنفيذها",
+        filter_status_rejected: "مرفوضة",
+        filter_scope_mine: "فروعي فقط",
+        filter_scope_all: "كل فروع نون",
+        shifts_title: "متابعة الشيفتات النشطة (مدة الوردية 11 ساعة)",
+        shifts_desc: "العداد التنازلي يحسب بدقة وقت انتهاء الشيفت. عند اكتمال الـ 11 ساعة يظهر تنبيه أحمر فوري لإغلاق الشيفت.",
+        pilots_dir_title: "دليل طيارين الفروع والبحث السريع",
+        btn_add_pilot: "إضافة طيار جديد",
+        ph_search_pilots: "🔍 اكتب كود الطيار، الاسم، رقم الموبايل، أو الفرع...",
+        kpi_active: "طيار على الوردية حالياً",
+        kpi_pending: "طلبات معلقة في الانتظار",
+        kpi_overdue: "شيفتات متجاوزة 11 ساعة",
+        kpi_sla: "متوسط سرعة استجابة الفتح",
+        chart_hourly_title: "توزيع كثافة الطيارين على مدار اليوم (24 ساعة)",
+        heatmap_title: "خريطة تغطية الفروع ومراقبة الأداء",
+        th_branch: "الفرع",
+        th_assigned_opener: "المشرف المسؤول",
+        th_active_riders: "نشط حالياً",
+        th_pending_reqs: "معلق",
+        th_overdue: "متأخر (>11س)",
+        th_status: "الحالة",
+        leaderboard_title: "لوحة شرف سرعة الاستجابة لفريق الفتح",
+        btn_export_csv: "تصدير إكسيل (Excel / CSV)",
+        btn_manage_branches: "إدارة الفروع",
+        btn_inspect: "فحص الآن ←",
+        btn_cancel: "إلغاء",
+        btn_save: "حفظ وتأكيد",
+        modal_direct_title: "تسجيل فتح مباشر للطيار",
+        modal_my_branches_title: "تخصيص الفروع المسندة لك",
+        lbl_your_name: "اسمك كمشرف فتح",
+        lbl_select_branches_desc: "حدد الفروع التي تتولى فتح شيفتاتها (يتم تصفية اللوحة عليها تلقائياً):",
+        btn_save_branches: "حفظ الفروع",
+        modal_reject_title: "تحديد سبب رفض الطلب",
+        lbl_quick_reasons: "أسباب سريعة شائعة:",
+        lbl_reason_detail: "السبب بالتفصيل:",
+        btn_confirm_reject: "تأكيد الرفض",
+        modal_branches_mgmt: "إدارة قائمة الفروع المعتمدة",
+        lbl_branches_textarea: "أدخل كل فرع في سطر منفصل:",
+        btn_save_all_branches: "تحديث قائمة الفروع",
+        modal_pilot_title: "إضافة / تسجيل طيار جديد",
+        btn_save_pilot: "حفظ الطيار",
+        status_new_lbl: "جديد",
+        status_done_lbl: "تم التنفيذ",
+        status_rejected_lbl: "مرفوض",
+        role_login_text: "دخول فريق الفتح",
+        role_logout_text: "خروج من اللوحة",
+        la_badge_prefix: "طالب الفتح (LA): "
+      },
+      en: {
+        app_title: "noon Rider Portal",
+        app_subtitle: "Rider Operations & Dispatch Hub",
+        lang_lbl: "عربي",
+        nav_submit: "Submit Request",
+        nav_my: "My Submissions",
+        nav_board: "Dispatch Board",
+        nav_shifts: "Active Shifts",
+        nav_pilots: "Rider Directory",
+        nav_manager: "Manager Hub",
+        form_title: "Submit Shift Open / Close Request",
+        lbl_la_name: "LA Name (Requesting Logistics Associate)",
+        ph_la_name: "Enter your name as requesting LA...",
+        lbl_branch: "Branch / Hub",
+        opt_select_branch: "-- Select Branch --",
+        lbl_office: "Office / Vendor",
+        ph_office: "e.g. noon Direct, Third-Party Vendor...",
+        lbl_rider_name: "Rider Full Name",
+        ph_rider_name: "Full official rider name...",
+        lbl_rider_id: "Rider ID",
+        ph_rider_id: "Digits only (e.g. 104852)",
+        lbl_rider_phone: "Rider Phone Number (Call & WhatsApp)",
+        ph_rider_phone: "e.g. 01012345678 or 011 / 012 / 015",
+        lbl_req_type: "Request Type",
+        opt_open_shift: "🟢 Open Shift",
+        opt_close_shift: "🔴 Close Shift",
+        opt_edit_shift: "🟡 Modify Shift",
+        opt_suspend_rider: "⛔ Suspend Rider",
+        opt_unblock_rider: "🔓 Unblock Rider",
+        opt_other_request: "💬 Other Request",
+        lbl_notes: "Additional Notes (Optional)",
+        ph_notes: "Any details the dispatcher needs...",
+        lbl_urgent: "Urgent Priority Request (Highlighted on Board)",
+        btn_submit: "Submit Request Now",
+        msg_submitted_title: "Request Submitted Successfully!",
+        msg_submitted_sub: "Dispatched to the hub supervisor for immediate execution.",
+        btn_submit_another: "Submit Another Request",
+        my_reqs_title: "My Submitted Requests History",
+        btn_refresh: "Refresh",
+        lbl_opener_name: "Current Dispatcher",
+        lbl_my_branches: "Assigned Hubs",
+        btn_configure_branches: "Select Hubs",
+        btn_direct_open: "Direct Open",
+        ph_search: "🔍 Search by rider name, ID, phone, or LA...",
+        filter_status_new: "Pending New Requests",
+        filter_status_all: "All Statuses",
+        filter_status_done: "Completed",
+        filter_status_rejected: "Rejected",
+        filter_scope_mine: "My Hubs Only",
+        filter_scope_all: "All noon Hubs",
+        shifts_title: "Active Shifts Tracker (11h Shift Duration)",
+        shifts_desc: "Precise countdown timer until shift end. Red alert fires when exceeding 11 hours.",
+        pilots_dir_title: "Rider Directory & Instant Lookup",
+        btn_add_pilot: "Add New Rider",
+        ph_search_pilots: "🔍 Enter Rider ID, Name, Phone, or Branch...",
+        kpi_active: "Active Riders on Shift",
+        kpi_pending: "Pending Requests",
+        kpi_overdue: "Overdue Shifts (>11h)",
+        kpi_sla: "Average Response SLA",
+        chart_hourly_title: "Hourly Rider Density Distribution (24h)",
+        heatmap_title: "Branch Coverage & Performance Matrix",
+        th_branch: "Branch",
+        th_assigned_opener: "Assigned Opener",
+        th_active_riders: "Active Riders",
+        th_pending_reqs: "Pending",
+        th_overdue: "Overdue (>11h)",
+        th_status: "Status",
+        leaderboard_title: "Dispatcher Response Speed Leaderboard",
+        btn_export_csv: "Export to Excel / CSV",
+        btn_manage_branches: "Manage Hubs",
+        btn_inspect: "Inspect Now ←",
+        btn_cancel: "Cancel",
+        btn_save: "Confirm & Save",
+        modal_direct_title: "Direct Shift Entry",
+        modal_my_branches_title: "Configure Your Assigned Hubs",
+        lbl_your_name: "Your Name (Dispatcher)",
+        lbl_select_branches_desc: "Select the hubs you are responsible for (board will filter automatically):",
+        btn_save_branches: "Save Hubs",
+        modal_reject_title: "Select Rejection Reason",
+        lbl_quick_reasons: "Common Reasons:",
+        lbl_reason_detail: "Detailed Reason:",
+        btn_confirm_reject: "Confirm Rejection",
+        modal_branches_mgmt: "Authorized Hubs Management",
+        lbl_branches_textarea: "Enter one branch per line:",
+        btn_save_all_branches: "Update Hubs List",
+        modal_pilot_title: "Add / Register Rider",
+        btn_save_pilot: "Save Rider",
+        status_new_lbl: "New",
+        status_done_lbl: "Done",
+        status_rejected_lbl: "Rejected",
+        role_login_text: "Dispatcher Login",
+        role_logout_text: "Logout Dispatcher",
+        la_badge_prefix: "Requested by LA: "
+      }
+    };
+
+    /* =================================================================
+       Application State & Storage
+       ================================================================= */
+    let currentLang = localStorage.getItem('noon_lang') || 'ar';
+    let currentTheme = localStorage.getItem('noon_theme') || 'light';
+    let soundEnabled = localStorage.getItem('noon_sound') !== 'false';
+    let wakeLock = null;
+
+    let appRole = localStorage.getItem('noon_role') || 'la'; // 'la' or 'opener' or 'manager'
+    let currentOpenerName = localStorage.getItem('noon_opener_name') || '';
+    let myAssignedBranches = JSON.parse(localStorage.getItem('noon_my_branches') || '[]');
+    let mySubmissions = JSON.parse(localStorage.getItem('noon_my_subs') || '[]');
+
+    let appData = {
+      requests: [],
+      pilots: [],
+      branches: [
+        'التجمع الخامس', 'المعادي', 'مدينة نصر', 'مصر الجديدة',
+        'المهندسين', 'الدقي', 'الشيخ زايد', '6 أكتوبر',
+        'الرحاب', 'الشروق', 'العبور', 'حلوان', 'شبرا', 'فيصل والهرم'
+      ],
+      openers: [],
+      config: { shiftHours: 11 }
+    };
+
+    let selectedBoardBranch = '';
+    let isServerConnected = false;
+    let pendingRejectId = null;
+
+    /* =================================================================
+       DOM Helpers & Selectors
+       ================================================================= */
+    const $ = id => document.getElementById(id);
+    const $$ = sel => document.querySelectorAll(sel);
+
+    function showToast(msg) {
+      const toast = $('toast');
+      $('toast-text').textContent = msg;
+      toast.classList.remove('hidden');
+      clearTimeout(window._toastTimeout);
+      window._toastTimeout = setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3500);
+    }
+
+    function playBeep() {
+      if (!soundEnabled) return;
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.25);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.26);
+      } catch (e) {}
+    }
+
+    /* =================================================================
+       Internationalization (i18n) Engine
+       ================================================================= */
+    function setLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('noon_lang', lang);
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+      const t = I18N[lang];
+      $('txt-app-title').textContent = t.app_title;
+      $('txt-app-subtitle').textContent = t.app_subtitle;
+      $('txt-lang-lbl').textContent = t.lang_lbl;
+
+      // Update text with data-i18n
+      $$('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (t[key]) el.textContent = t[key];
+      });
+
+      // Update placeholders with data-i18n-ph
+      $$('[data-i18n-ph]').forEach(el => {
+        const key = el.getAttribute('data-i18n-ph');
+        if (t[key]) el.placeholder = t[key];
+      });
+
+      updateRoleUI();
+      renderAll();
+    }
+
+    $('btn-lang').onclick = () => {
+      setLanguage(currentLang === 'ar' ? 'en' : 'ar');
+    };
+
+    /* =================================================================
+       Theme & Utility Toggles
+       ================================================================= */
+    function setTheme(th) {
+      currentTheme = th;
+      localStorage.setItem('noon_theme', th);
+      document.documentElement.setAttribute('data-theme', th);
+      $('btn-theme').textContent = th === 'dark' ? '☀️' : '🌙';
+    }
+    $('btn-theme').onclick = () => {
+      setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+    };
+
+    $('btn-sound').onclick = () => {
+      soundEnabled = !soundEnabled;
+      localStorage.setItem('noon_sound', soundEnabled);
+      $('btn-sound').textContent = soundEnabled ? '🔔' : '🔕';
+      $('btn-sound').classList.toggle('active', soundEnabled);
+      if (soundEnabled) playBeep();
+    };
+
+    async function toggleWakeLock() {
+      if (!navigator.wakeLock) {
+        showToast(currentLang === 'ar' ? 'المتصفح لا يدعم إبقاء الشاشة مضاءة' : 'WakeLock not supported in this browser');
+        return;
+      }
+      if (wakeLock) {
+        wakeLock.release().then(() => { wakeLock = null; });
+        $('btn-wake').classList.remove('active');
+        showToast(currentLang === 'ar' ? 'تم تعطيل إبقاء الشاشة' : 'Screen wake released');
+      } else {
+        try {
+          wakeLock = await navigator.wakeLock.request('screen');
+          $('btn-wake').classList.add('active');
+          showToast(currentLang === 'ar' ? 'الشاشة ستظل مضاءة دائماً 🔆' : 'Screen will stay awake 🔆');
+          wakeLock.addEventListener('release', () => {
+            $('btn-wake').classList.remove('active');
+            wakeLock = null;
+          });
+        } catch (e) {}
+      }
+    }
+    $('btn-wake').onclick = toggleWakeLock;
+
+    /* =================================================================
+       Role Management (LA vs Opener vs Manager)
+       ================================================================= */
+    function updateRoleUI() {
+      const isOpenerOrMgr = appRole === 'opener' || appRole === 'manager';
+      $('nav-board').style.display = isOpenerOrMgr ? 'inline-flex' : 'none';
+      $('nav-shifts').style.display = isOpenerOrMgr ? 'inline-flex' : 'none';
+      $('nav-pilots').style.display = isOpenerOrMgr ? 'inline-flex' : 'none';
+      $('nav-manager').style.display = appRole === 'manager' ? 'inline-flex' : 'none';
+
+      const t = I18N[currentLang];
+      $('txt-role-state').textContent = isOpenerOrMgr ? t.role_logout_text : t.role_login_text;
+      $('btn-role-toggle').classList.toggle('active', isOpenerOrMgr);
+
+      if (isOpenerOrMgr) {
+        $('current-opener-name').textContent = currentOpenerName || (currentLang === 'ar' ? 'مشرف غير محدد' : 'Anonymous');
+        $('my-branches-summary').textContent = myAssignedBranches.length
+          ? myAssignedBranches.join('، ')
+          : (currentLang === 'ar' ? 'جميع الفروع' : 'All Branches');
+      }
+    }
+
+    $('btn-role-toggle').onclick = () => {
+      if (appRole === 'opener' || appRole === 'manager') {
+        appRole = 'la';
+        localStorage.setItem('noon_role', 'la');
+        updateRoleUI();
+        switchTab('tab-form');
+        showToast(currentLang === 'ar' ? 'تم الخروج من وضع المشرف' : 'Logged out of dispatcher role');
+      } else {
+        const pin = prompt(currentLang === 'ar' ? 'أدخل كود المرور لفريق الفتح (5821) أو كود المدير (7700):' : 'Enter Dispatch PIN (5821) or Manager PIN (7700):');
+        if (pin === '7700') {
+          appRole = 'manager';
+          localStorage.setItem('noon_role', 'manager');
+          updateRoleUI();
+          switchTab('tab-board');
+          showToast(currentLang === 'ar' ? 'مرحباً بالمدير! تم تفعيل لوحة القيادة 📊' : 'Welcome Manager! Command hub active 📊');
+        } else if (pin === '5821' || pin === '1234') {
+          appRole = 'opener';
+          localStorage.setItem('noon_role', 'opener');
+          if (!currentOpenerName) {
+            currentOpenerName = prompt(currentLang === 'ar' ? 'اكتب اسمك كمسؤول فتح شيفتات:' : 'Enter your name as Dispatcher:') || 'Dispatcher';
+            localStorage.setItem('noon_opener_name', currentOpenerName);
+          }
+          updateRoleUI();
+          switchTab('tab-board');
+          showToast(currentLang === 'ar' ? 'تم تسجيل الدخول كمسؤول فتح شيفتات 🛵' : 'Logged in as Dispatcher 🛵');
+        } else if (pin !== null) {
+          showToast(currentLang === 'ar' ? '❌ كود المرور غير صحيح' : '❌ Invalid PIN code');
+        }
+      }
+    };
+
+    /* =================================================================
+       Navigation Tabs
+       ================================================================= */
+    function switchTab(tabId) {
+      $$('main > section').forEach(sec => sec.style.display = 'none');
+      const target = $(tabId);
+      if (target) target.style.display = 'block';
+
+      $$('.main-nav .nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-tab') === tabId);
+      });
+
+      renderAll();
+    }
+
+    $$('.main-nav .nav-btn').forEach(btn => {
+      btn.onclick = () => switchTab(btn.getAttribute('data-tab'));
+    });
+
+    $('overdue-ribbon').onclick = () => {
+      if (appRole === 'la') {
+        appRole = 'opener';
+        localStorage.setItem('noon_role', 'opener');
+        updateRoleUI();
+      }
+      switchTab('tab-shifts');
+    };
+
+    /* =================================================================
+       Data Synchronization (Server REST/SSE + Local Fallback)
+       ================================================================= */
+    const isFileMode = window.location.protocol === 'file:';
+    const API_BASE = isFileMode ? 'http://localhost:3000' : '';
+
+    async function loadData() {
+      // First attempt local storage
+      const localCached = localStorage.getItem('noon_hub_data');
+      if (localCached) {
+        try {
+          const parsed = JSON.parse(localCached);
+          appData = Object.assign(appData, parsed);
+        } catch(e) {}
+      }
+
+      // Check if server is reachable
+      try {
+        const res = await fetch(API_BASE + '/api/data', { cache: 'no-store' });
+        if (res.ok) {
+          const remoteData = await res.json();
+          appData = remoteData;
+          isServerConnected = true;
+          $('sync-dot').className = 'dot live';
+          $('sync-text').textContent = currentLang === 'ar' ? '🟢 متصل بالسيرفر المباشر (مزامنة فورية لكل الأجهزة)' : '🟢 Connected to Live Server (Real-time sync)';
+          setupSSE();
+        } else {
+          fallbackLocalMode();
+        }
+      } catch (e) {
+        fallbackLocalMode();
+      }
+
+      populateBranchSelects();
+      renderAll();
+    }
+
+    function fallbackLocalMode() {
+      isServerConnected = false;
+      $('sync-dot').className = 'dot offline';
+      $('sync-text').textContent = currentLang === 'ar' ? '🟡 وضع الحفظ المحلي (شغّل السيرفر للمزامنة الجماعية)' : '🟡 Local Storage Mode (Run node server for live network sync)';
+    }
+
+    function persistLocal() {
+      localStorage.setItem('noon_hub_data', JSON.stringify(appData));
+    }
+
+    function setupSSE() {
+      if (window._eventSource) return;
+      try {
+        const es = new EventSource(API_BASE + '/api/stream');
+        window._eventSource = es;
+        es.addEventListener('request_created', e => {
+          const req = JSON.parse(e.data);
+          if (!appData.requests.some(r => r.id === req.id)) {
+            appData.requests.unshift(req);
+            playBeep();
+            renderAll();
+          }
+        });
+        es.addEventListener('request_updated', e => {
+          const req = JSON.parse(e.data);
+          const idx = appData.requests.findIndex(r => r.id === req.id);
+          if (idx !== -1) {
+            appData.requests[idx] = req;
+            renderAll();
+          }
+        });
+        es.addEventListener('request_deleted', e => {
+          const { id } = JSON.parse(e.data);
+          appData.requests = appData.requests.filter(r => r.id !== id);
+          renderAll();
+        });
+        es.addEventListener('pilot_created', e => {
+          const p = JSON.parse(e.data);
+          if (!appData.pilots.some(x => x.id === p.id)) {
+            appData.pilots.push(p);
+            renderAll();
+          }
+        });
+        es.addEventListener('config_updated', e => {
+          const { branches, config } = JSON.parse(e.data);
+          if (branches) appData.branches = branches;
+          if (config) appData.config = config;
+          populateBranchSelects();
+          renderAll();
+        });
+      } catch (e) {}
+    }
+
+    async function apiPost(endpoint, data) {
+      if (isServerConnected) {
+        try {
+          const res = await fetch(API_BASE + endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          if (res.ok) return await res.json();
+        } catch(e) {}
+      }
+      return null;
+    }
+
+    async function apiPatch(endpoint, data) {
+      if (isServerConnected) {
+        try {
+          const res = await fetch(API_BASE + endpoint, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          if (res.ok) return await res.json();
+        } catch(e) {}
+      }
+      return null;
+    }
+
+    /* =================================================================
+       Branch Dropdown Population
+       ================================================================= */
+    function populateBranchSelects() {
+      const branches = appData.branches || [];
+      const opts = branches.map(b => `<option value="${b}">${b}</option>`).join('');
+      const defaultOpt = `<option value="">${I18N[currentLang].opt_select_branch}</option>`;
+
+      $('f_branch').innerHTML = defaultOpt + opts;
+      $('dir_branch').innerHTML = defaultOpt + opts;
+      $('p_branch').innerHTML = defaultOpt + opts;
+
+      // Populate office datalist
+      const offices = [...new Set(appData.requests.map(r => r.office).filter(Boolean))];
+      $('office-suggestions').innerHTML = offices.map(o => `<option value="${o}">`).join('');
+    }
+
+    /* =================================================================
+       Request Submission Logic (with LA Name & Phone)
+       ================================================================= */
+    // Remember last LA name
+    const rememberedLA = localStorage.getItem('noon_last_la_name');
+    if (rememberedLA) $('f_la_name').value = rememberedLA;
+
+    $('rider-form').onsubmit = async () => {
+      const la_name = $('f_la_name').value.trim();
+      const branch = $('f_branch').value;
+      const rider_name = $('f_rider_name').value.trim();
+      const rider_id = $('f_rider_id').value.trim().replace(/\D/g, '');
+      const rider_phone = $('f_rider_phone').value.trim();
+      const office = $('f_office').value.trim() || (currentLang === 'ar' ? 'نون داخلي' : 'noon Internal');
+      const rt = $('f_req_type').value;
+      const notes = $('f_notes').value.trim();
+      const urg = $('f_urgent').checked;
+
+      if (!la_name || !branch || !rider_name || !rider_id) {
+        showToast(currentLang === 'ar' ? 'يرجى استكمال الحقول المطلوبة' : 'Please complete all required fields');
+        return;
+      }
+
+      localStorage.setItem('noon_last_la_name', la_name);
+
+      const newReq = {
+        id: 'r_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        branch,
+        name: rider_name,
+        pid: rider_id,
+        phone: rider_phone,
+        la_name,
+        office,
+        rt,
+        notes,
+        urg,
+        status: 'new',
+        ts: Date.now(),
+        updated: Date.now()
+      };
+
+      const serverRes = await apiPost('/api/requests', newReq);
+      const finalReq = serverRes || newReq;
+
+      if (!serverRes) {
+        appData.requests.unshift(finalReq);
+        persistLocal();
+      }
+
+      // Add to my submissions
+      mySubmissions.unshift(finalReq.id);
+      localStorage.setItem('noon_my_subs', JSON.stringify(mySubmissions.slice(0, 50)));
+
+      // Show confirmation
+      $('submitted-code').textContent = `REF: #${finalReq.id.slice(-5).toUpperCase()} (${rider_name})`;
+      $('rider-form').style.display = 'none';
+      $('submit-success-card').style.display = 'block';
+
+      showToast(currentLang === 'ar' ? '✅ تم إرسال الطلب بنجاح' : '✅ Request submitted successfully');
+      renderAll();
+    };
+
+    $('btn-new-req').onclick = () => {
+      $('rider-form').reset();
+      const lastLA = localStorage.getItem('noon_last_la_name');
+      if (lastLA) $('f_la_name').value = lastLA;
+      $('submit-success-card').style.display = 'none';
+      $('rider-form').style.display = 'block';
+    };
+
+    /* =================================================================
+       Board Rendering & Actions (Opener View)
+       ================================================================= */
+    function renderBoard() {
+      const listEl = $('board-requests-list');
+      const chipsEl = $('board-branch-chips');
+      const search = $('board-search').value.toLowerCase().trim();
+      const statusFilter = $('board-status-filter').value;
+      const scopeFilter = $('board-scope-filter').value;
+
+      // Render branch chips
+      const branchCounts = {};
+      appData.requests.forEach(r => {
+        if (r.status === 'new') branchCounts[r.branch] = (branchCounts[r.branch] || 0) + 1;
+      });
+
+      let branchesToShow = appData.branches;
+      if (scopeFilter === 'mine' && myAssignedBranches.length) {
+        branchesToShow = myAssignedBranches;
+      }
+
+      chipsEl.innerHTML = `<button class="chip ${!selectedBoardBranch ? 'active' : ''}" onclick="selectBoardBranch('')">
+        ${currentLang === 'ar' ? 'كل الفروع' : 'All Hubs'}
+      </button>` + branchesToShow.map(b => {
+        const count = branchCounts[b] || 0;
+        return `<button class="chip ${selectedBoardBranch === b ? 'active' : ''}" onclick="selectBoardBranch('${b}')">
+          ${b} ${count > 0 ? `<span class="chip-count">${count}</span>` : ''}
+        </button>`;
+      }).join('');
+
+      // Filter requests
+      const filtered = appData.requests.filter(r => {
+        if (selectedBoardBranch && r.branch !== selectedBoardBranch) return false;
+        if (scopeFilter === 'mine' && myAssignedBranches.length && !myAssignedBranches.includes(r.branch)) return false;
+        if (statusFilter !== 'all' && r.status !== statusFilter) return false;
+
+        if (search) {
+          const matchName = (r.name || '').toLowerCase().includes(search);
+          const matchPid = (r.pid || '').includes(search);
+          const matchPhone = (r.phone || '').includes(search);
+          const matchLA = (r.la_name || '').toLowerCase().includes(search);
+          const matchBranch = (r.branch || '').toLowerCase().includes(search);
+          if (!matchName && !matchPid && !matchPhone && !matchLA && !matchBranch) return false;
+        }
+        return true;
+      });
+
+      // Update badge on board tab
+      const pendingCount = appData.requests.filter(r => r.status === 'new' && (!myAssignedBranches.length || myAssignedBranches.includes(r.branch))).length;
+      $('badge-board').textContent = pendingCount;
+      $('badge-board').style.display = pendingCount > 0 ? 'inline-block' : 'none';
+
+      if (!filtered.length) {
+        listEl.innerHTML = `<div class="empty-state">
+          <div class="empty-icon">👌</div>
+          <h3>${currentLang === 'ar' ? 'لا توجد طلبات مطابقة حالياً' : 'No matching requests'}</h3>
+          <p>${currentLang === 'ar' ? 'جميع الفروع تحت السيطرة ولا توجد معلقات.' : 'All clear on selected hubs.'}</p>
+        </div>`;
+        return;
+      }
+
+      listEl.innerHTML = filtered.map(r => renderRequestCard(r)).join('');
+    }
+
+    window.selectBoardBranch = function(b) {
+      selectedBoardBranch = b;
+      renderBoard();
+    };
+
+    function renderRequestCard(r) {
+      const t = I18N[currentLang];
+      const isNew = r.status === 'new';
+      const isDone = r.status === 'done';
+      const isRejected = r.status === 'rejected';
+
+      const timeAgo = formatTimeAgo(r.ts);
+      const isUrgent = !!r.urg;
+
+      // Phone actions
+      const phoneHtml = r.phone ? `
+        <a href="tel:${r.phone}" class="btn btn-outline btn-sm" title="اتصال بالطيار">📞 ${r.phone}</a>
+        <a href="https://wa.me/20${r.phone.replace(/^0+/, '')}" target="_blank" class="btn btn-outline btn-sm" style="color:#25d366" title="محادثة واتساب">💬 WhatsApp</a>
+      ` : `<span style="font-size:12px; color:var(--text-muted)">${currentLang === 'ar' ? 'لا يوجد رقم هاتف' : 'No phone'}</span>`;
+
+      // Status Badge
+      let statusBadge = `<span class="badge badge-new">${t.status_new_lbl}</span>`;
+      if (isDone) statusBadge = `<span class="badge badge-done">${t.status_done_lbl}</span>`;
+      if (isRejected) statusBadge = `<span class="badge badge-rejected">${t.status_rejected_lbl}</span>`;
+      if (isUrgent) statusBadge = `<span class="badge badge-urgent">🚨 ${currentLang === 'ar' ? 'عاجل' : 'Urgent'}</span> ` + statusBadge;
+
+      // Action Buttons
+      let actionButtons = '';
+      if (isNew) {
+        actionButtons = `
+          <button class="btn btn-success btn-sm" onclick="handleRequestAction('${r.id}', 'done')">✓ ${currentLang === 'ar' ? 'تم الفتح' : 'Mark Done'}</button>
+          <button class="btn btn-danger btn-sm" onclick="promptRejectModal('${r.id}')">✕ ${currentLang === 'ar' ? 'رفض' : 'Reject'}</button>
+        `;
+      } else {
+        actionButtons = `
+          <button class="btn btn-outline btn-sm" onclick="handleRequestAction('${r.id}', 'new')">↩ ${currentLang === 'ar' ? 'إعادة للمعلق' : 'Reopen'}</button>
+        `;
+      }
+
+      return `
+        <div class="req-card status-${r.status} ${isUrgent ? 'urgent' : ''}">
+          <div class="req-header">
+            <div>
+              <span class="rider-name">${r.name}</span>
+              <span class="rider-id">#${r.pid}</span>
+            </div>
+            <div>${statusBadge}</div>
+          </div>
+
+          <div class="req-meta-grid">
+            <div class="meta-item">📍 <b>${r.branch}</b></div>
+            <div class="meta-item">🏢 <b>${r.office || 'نون'}</b></div>
+            <div class="meta-item">⚡ <b>${r.rt}</b></div>
+            <div class="meta-item">🕒 <b>${timeAgo}</b></div>
+            <div class="meta-item" style="grid-column: 1 / -1; color: var(--primary);">
+              👤 <b>${t.la_badge_prefix}</b> <span>${r.la_name || (currentLang === 'ar' ? 'مشرف غير مسجل' : 'N/A')}</span>
+            </div>
+          </div>
+
+          ${r.notes ? `<div style="font-size:13px; background:var(--bg); padding:6px 10px; border-radius:6px; margin:6px 0;">📝 <b>${r.notes}</b></div>` : ''}
+          ${r.reason ? `<div style="font-size:13px; color:var(--danger); background:#fee2e2; padding:6px 10px; border-radius:6px; margin:6px 0;">❌ <b>${currentLang === 'ar' ? 'سبب الرفض' : 'Rejection Reason'}:</b> ${r.reason}</div>` : ''}
+
+          <div class="req-actions">
+            <button class="btn btn-outline btn-sm" onclick="copyToClipboard('${r.pid}', '${currentLang === 'ar' ? 'تم نسخ كود الطيار' : 'Rider ID Copied'}')">📋 ID</button>
+            ${phoneHtml}
+            <div style="flex:1;"></div>
+            ${actionButtons}
+          </div>
+        </div>
+      `;
+    }
+
+    window.handleRequestAction = async function(id, newStatus, reason = '') {
+      const idx = appData.requests.findIndex(r => r.id === id);
+      if (idx === -1) return;
+
+      const req = appData.requests[idx];
+      const updates = {
+        status: newStatus,
+        by: currentOpenerName || 'Dispatcher',
+        reason: reason,
+        updated: Date.now()
+      };
+
+      Object.assign(req, updates);
+      renderAll();
+
+      await apiPatch(`/api/requests/${id}`, updates);
+      persistLocal();
+      showToast(newStatus === 'done'
+        ? (currentLang === 'ar' ? '✓ تم تنفيذ الطلب' : '✓ Request completed')
+        : (currentLang === 'ar' ? 'تم تحديث الطلب' : 'Request updated')
+      );
+    };
+
+    window.promptRejectModal = function(id) {
+      pendingRejectId = id;
+      $('reject-reason-input').value = '';
+      $('modal-reject-reason').classList.remove('hidden');
+    };
+
+    $('btn-confirm-reject').onclick = () => {
+      const reason = $('reject-reason-input').value.trim() || (currentLang === 'ar' ? 'مرفوض بدون سبب' : 'Rejected');
+      if (pendingRejectId) {
+        handleRequestAction(pendingRejectId, 'rejected', reason);
+        pendingRejectId = null;
+      }
+      $('modal-reject-reason').classList.add('hidden');
+    };
+
+    $$('.chip-reason').forEach(btn => {
+      btn.onclick = () => {
+        $('reject-reason-input').value = btn.getAttribute('data-r');
+      };
+    });
+
+    /* =================================================================
+       Active Shifts Calculation & Countdown Timer
+       ================================================================= */
+    function getActiveShifts() {
+      const shiftDurationMs = (appData.config.shiftHours || 11) * 3600 * 1000;
+      const now = Date.now();
+      const openShifts = {};
+
+      appData.requests.forEach(r => {
+        if (r.status !== 'done') return;
+        const key = `${r.branch}_${r.pid}`;
+
+        if (r.rt === 'فتح شيفت') {
+          if (!openShifts[key] || r.updated > openShifts[key].start) {
+            openShifts[key] = {
+              request: r,
+              start: r.updated || r.ts,
+              end: (r.updated || r.ts) + shiftDurationMs,
+              closed: false
+            };
+          }
+        } else if (r.rt === 'قفل شيفت') {
+          if (openShifts[key] && (r.updated || r.ts) >= openShifts[key].start) {
+            openShifts[key].closed = true;
+          }
+        }
+      });
+
+      return Object.values(openShifts)
+        .filter(s => !s.closed && (now - s.start < 7 * 86400000))
+        .sort((a, b) => a.end - b.end);
+    }
+
+    function renderShifts() {
+      const shifts = getActiveShifts();
+      const container = $('shifts-container');
+      const now = Date.now();
+
+      $('active-shifts-count').textContent = `${shifts.length} ${currentLang === 'ar' ? 'طيار نشط' : 'Active Riders'}`;
+      const overdueShifts = shifts.filter(s => s.end < now);
+
+      // Overdue top ribbon
+      if (overdueShifts.length > 0) {
+        $('overdue-ribbon').style.display = 'flex';
+        $('overdue-text').textContent = currentLang === 'ar'
+          ? `يوجد ${overdueShifts.length} شيفت تجاوزت مدة الـ 11 ساعة وتحتاج للإغلاق الفوري!`
+          : `${overdueShifts.length} shifts exceeded 11 hours and need closing!`;
+        $('badge-shifts').textContent = overdueShifts.length;
+        $('badge-shifts').style.display = 'inline-block';
+      } else {
+        $('overdue-ribbon').style.display = 'none';
+        $('badge-shifts').style.display = 'none';
+      }
+
+      if (!shifts.length) {
+        container.innerHTML = `<div class="empty-state">
+          <div class="empty-icon">☕</div>
+          <h3>${currentLang === 'ar' ? 'لا توجد شيفتات مفتوحة حالياً' : 'No active shifts currently'}</h3>
+        </div>`;
+        return;
+      }
+
+      container.innerHTML = shifts.map(s => {
+        const r = s.request;
+        const elapsedMs = now - s.start;
+        const remainingMs = s.end - now;
+        const isOverdue = remainingMs <= 0;
+        const totalDuration = s.end - s.start;
+        const pct = Math.min(100, Math.max(0, (elapsedMs / totalDuration) * 100));
+
+        let progressClass = '';
+        if (pct > 75) progressClass = 'warning';
+        if (isOverdue) progressClass = 'danger';
+
+        const elapsedFormatted = formatDuration(elapsedMs);
+        const remainingFormatted = isOverdue
+          ? (currentLang === 'ar' ? `منتهي منذ ${formatDuration(-remainingMs)}` : `Overdue by ${formatDuration(-remainingMs)}`)
+          : (currentLang === 'ar' ? `متبقي ${formatDuration(remainingMs)}` : `${formatDuration(remainingMs)} remaining`);
+
+        return `
+          <div class="req-card ${isOverdue ? 'status-rejected' : 'status-done'}" style="margin-bottom:12px;">
+            <div class="req-header">
+              <div>
+                <span class="rider-name">${r.name}</span>
+                <span class="rider-id">#${r.pid}</span>
+              </div>
+              <span class="badge ${isOverdue ? 'badge-urgent' : 'badge-done'}">
+                ${isOverdue ? '🔴 ' + (currentLang === 'ar' ? 'متأخر' : 'Overdue') : '🟢 ' + (currentLang === 'ar' ? 'نشط' : 'Active')}
+              </span>
+            </div>
+
+            <div class="req-meta-grid">
+              <div class="meta-item">📍 <b>${r.branch}</b></div>
+              <div class="meta-item">▶ <b>${formatClock(s.start)}</b></div>
+              <div class="meta-item">⏹ <b>${formatClock(s.end)}</b></div>
+              <div class="meta-item" style="color: ${isOverdue ? 'var(--danger)' : 'var(--text-main)'}">
+                ⏱ <b>${remainingFormatted}</b>
+              </div>
+            </div>
+
+            <div class="shift-bar-wrap">
+              <div class="shift-bar-info">
+                <span>${currentLang === 'ar' ? 'شغال بقاله' : 'Elapsed'}: ${elapsedFormatted}</span>
+                <span>${Math.round(pct)}%</span>
+              </div>
+              <div class="shift-bar">
+                <div class="shift-bar-fill ${progressClass}" style="width: ${pct}%"></div>
+              </div>
+            </div>
+
+            <div class="req-actions">
+              <button class="btn btn-outline btn-sm" onclick="copyToClipboard('${r.pid}', 'ID Copied')">📋 ID</button>
+              ${r.phone ? `<a href="tel:${r.phone}" class="btn btn-outline btn-sm">📞 ${r.phone}</a>` : ''}
+              <div style="flex:1;"></div>
+              <button class="btn btn-danger btn-sm" onclick="closeShiftDirect('${r.branch}', '${r.pid}', '${r.name}')">
+                ⏹ ${currentLang === 'ar' ? 'إغلاق الشيفت الآن' : 'Close Shift'}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.closeShiftDirect = async function(branch, pid, name) {
+      const newReq = {
+        id: 'r_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        branch,
+        name,
+        pid,
+        rt: 'قفل شيفت',
+        status: 'done',
+        by: currentOpenerName || 'Dispatcher',
+        ts: Date.now(),
+        updated: Date.now(),
+        manual: true
+      };
+
+      appData.requests.unshift(newReq);
+      persistLocal();
+      await apiPost('/api/requests', newReq);
+
+      showToast(currentLang === 'ar' ? `تم قفل شيفت الطيار ${name}` : `Closed shift for ${name}`);
+      renderAll();
+    };
+
+    /* =================================================================
+       Pilot Directory (Search & Management)
+       ================================================================= */
+    function renderPilots() {
+      const container = $('pilots-list-container');
+      const search = $('pilot-dir-search').value.toLowerCase().trim();
+
+      const filtered = appData.pilots.filter(p => {
+        if (!search) return true;
+        return (p.name || '').toLowerCase().includes(search) ||
+               (p.pid || '').includes(search) ||
+               (p.phone || '').includes(search) ||
+               (p.branch || '').toLowerCase().includes(search);
+      });
+
+      if (!filtered.length) {
+        container.innerHTML = `<div class="empty-state">
+          <div class="empty-icon">👥</div>
+          <h3>${currentLang === 'ar' ? 'لم يتم العثور على طيارين' : 'No riders found'}</h3>
+          <p>${currentLang === 'ar' ? 'اضغط «إضافة طيار جديد» لتسجيل طياري الفرع.' : 'Click "Add New Rider" to register.'}</p>
+        </div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(p => `
+        <div class="card" style="margin-bottom:8px; padding:12px 16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div>
+              <b style="font-size:16px;">${p.name}</b>
+              <span class="rider-id">#${p.pid}</span>
+              <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+                📍 ${p.branch} · 🏢 ${p.office || 'نون'} · 📞 ${p.phone || (currentLang === 'ar' ? 'بدون هاتف' : 'No phone')}
+              </div>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-outline btn-sm" onclick="copyToClipboard('${p.pid}', 'ID Copied')">📋 ID</button>
+              ${p.phone ? `<a href="https://wa.me/20${p.phone.replace(/^0+/, '')}" target="_blank" class="btn btn-outline btn-sm" style="color:#25d366">💬 WhatsApp</a>` : ''}
+              <button class="btn btn-noon btn-sm" onclick="quickOpenFromPilot('${p.branch}', '${p.pid}', '${p.name}', '${p.phone || ''}')">🟢 ${currentLang === 'ar' ? 'فتح شيفت' : 'Open Shift'}</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    window.quickOpenFromPilot = function(branch, pid, name, phone) {
+      $('dir_pid').value = pid;
+      $('dir_name').value = name;
+      $('dir_branch').value = branch;
+      $('dir_phone').value = phone;
+      $('dir_rt').value = 'فتح شيفت';
+      $('modal-quick-open').classList.remove('hidden');
+    };
+
+    /* =================================================================
+       Executive Manager Hub (Dashboard & Analytics)
+       ================================================================= */
+    function renderManagerDashboard() {
+      const now = new Date();
+      $('mgr-current-date').textContent = now.toLocaleDateString(currentLang === 'ar' ? 'ar-EG' : 'en-US', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+      });
+
+      const activeShifts = getActiveShifts();
+      const overdueShifts = activeShifts.filter(s => s.end < Date.now());
+      const pendingReqs = appData.requests.filter(r => r.status === 'new');
+
+      // SLA calculation
+      const doneToday = appData.requests.filter(r => r.status === 'done' && r.updated && r.updated > r.ts && !r.manual);
+      let avgMinutes = 0;
+      if (doneToday.length > 0) {
+        const totalMs = doneToday.reduce((acc, r) => acc + (r.updated - r.ts), 0);
+        avgMinutes = (totalMs / doneToday.length / 60000).toFixed(1);
+      }
+
+      $('kpi-active-riders').textContent = activeShifts.length;
+      $('kpi-pending-reqs').textContent = pendingReqs.length;
+      $('kpi-overdue-shifts').textContent = overdueShifts.length;
+      $('kpi-avg-sla').textContent = `${avgMinutes} ${currentLang === 'ar' ? 'د' : 'm'}`;
+
+      // Render 24h Hourly Density Chart (SVG)
+      renderHourlyChart(activeShifts);
+
+      // Render Branch Performance Table
+      renderBranchPerformance(activeShifts);
+
+      // Render Opener Leaderboard
+      renderLeaderboard(doneToday);
+    }
+
+    function renderHourlyChart(activeShifts) {
+      const container = $('hourly-chart-container');
+      const counts = new Array(24).fill(0);
+      const currentHour = new Date().getHours();
+
+      activeShifts.forEach(s => {
+        const startH = new Date(s.start).getHours();
+        const endH = new Date(s.end).getHours();
+        for (let h = 0; h < 24; h++) {
+          if (startH <= endH) {
+            if (h >= startH && h <= endH) counts[h]++;
+          } else {
+            // Over midnight
+            if (h >= startH || h <= endH) counts[h]++;
+          }
+        }
+      });
+
+      const maxVal = Math.max(5, ...counts);
+      const svgW = 600;
+      const svgH = 140;
+      const barW = svgW / 24 - 4;
+
+      let barsHtml = '';
+      for (let h = 0; h < 24; h++) {
+        const val = counts[h];
+        const barH = Math.max(4, (val / maxVal) * (svgH - 30));
+        const x = h * (svgW / 24) + 2;
+        const y = svgH - 24 - barH;
+        const isCurrent = h === currentHour;
+        const fill = isCurrent ? 'var(--noon-yellow)' : 'var(--primary)';
+
+        barsHtml += `
+          <g>
+            <rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="3" fill="${fill}" opacity="${isCurrent ? '1' : '0.85'}">
+              <title>${String(h).padStart(2,'0')}:00 - ${val} ${currentLang === 'ar' ? 'طيار' : 'Riders'}</title>
+            </rect>
+            ${h % 3 === 0 ? `<text x="${x + barW/2}" y="${svgH - 6}" font-size="10" text-anchor="middle" fill="var(--text-muted)">${String(h).padStart(2,'0')}</text>` : ''}
+          </g>
+        `;
+      }
+
+      container.innerHTML = `
+        <svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%; height:auto; overflow:visible;">
+          ${barsHtml}
+        </svg>
+      `;
+    }
+
+    function renderBranchPerformance(activeShifts) {
+      const tbody = $('branch-perf-tbody');
+      const branches = appData.branches;
+
+      const rows = branches.map(b => {
+        const active = activeShifts.filter(s => s.request.branch === b).length;
+        const pending = appData.requests.filter(r => r.branch === b && r.status === 'new').length;
+        const overdue = activeShifts.filter(s => s.request.branch === b && s.end < Date.now()).length;
+
+        // Find assigned openers
+        const assigned = appData.openers.filter(o => o.branches && o.branches.includes(b)).map(o => o.name);
+        const openerDisplay = assigned.length ? assigned.join('، ') : `<span style="color:var(--danger)">${currentLang === 'ar' ? 'بدون مشرف' : 'Unassigned'}</span>`;
+
+        let statusBadge = `<span class="badge badge-done">${currentLang === 'ar' ? 'منضبط' : 'Good'}</span>`;
+        if (overdue > 0) statusBadge = `<span class="badge badge-rejected">${overdue} ${currentLang === 'ar' ? 'متأخر' : 'Overdue'}</span>`;
+        else if (pending > 3) statusBadge = `<span class="badge badge-new">${pending} ${currentLang === 'ar' ? 'تكدس' : 'Queue'}</span>`;
+
+        return `
+          <tr>
+            <td><b>${b}</b></td>
+            <td>${openerDisplay}</td>
+            <td><b>${active}</b></td>
+            <td>${pending > 0 ? `<b style="color:var(--warning)">${pending}</b>` : '0'}</td>
+            <td>${overdue > 0 ? `<b style="color:var(--danger)">${overdue}</b>` : '0'}</td>
+            <td>${statusBadge}</td>
+          </tr>
+        `;
+      }).join('');
+
+      tbody.innerHTML = rows;
+    }
+
+    function renderLeaderboard(doneToday) {
+      const container = $('opener-leaderboard-container');
+      const stats = {};
+
+      doneToday.forEach(r => {
+        if (!r.by) return;
+        stats[r.by] = stats[r.by] || { name: r.by, count: 0, totalMs: 0 };
+        stats[r.by].count++;
+        stats[r.by].totalMs += (r.updated - r.ts);
+      });
+
+      const list = Object.values(stats)
+        .map(s => ({ name: s.name, count: s.count, avgMin: (s.totalMs / s.count / 60000).toFixed(1) }))
+        .sort((a, b) => b.count - a.count);
+
+      if (!list.length) {
+        container.innerHTML = `<div style="font-size:13px; color:var(--text-muted); padding:10px 0;">${currentLang === 'ar' ? 'لا توجد طلبات منفذة اليوم بعد.' : 'No completed requests today yet.'}</div>`;
+        return;
+      }
+
+      container.innerHTML = list.map((item, i) => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--card-border);">
+          <div>
+            <b>${['🥇','🥈','🥉'][i] || (i+1) + '.'} ${item.name}</b>
+          </div>
+          <div style="font-size:13px; color:var(--text-muted);">
+            <b style="color:var(--success)">${item.count}</b> ${currentLang === 'ar' ? 'طلب' : 'requests'} · ⏱ ${item.avgMin} ${currentLang === 'ar' ? 'دقيقة' : 'min'}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    /* =================================================================
+       CSV / Excel Export
+       ================================================================= */
+    $('btn-export-csv').onclick = () => {
+      const t = I18N[currentLang];
+      const headers = [
+        'ID',
+        currentLang === 'ar' ? 'الفرع' : 'Branch',
+        currentLang === 'ar' ? 'اسم الطيار' : 'Rider Name',
+        currentLang === 'ar' ? 'كود الطيار' : 'Rider ID',
+        currentLang === 'ar' ? 'رقم الهاتف' : 'Phone',
+        currentLang === 'ar' ? 'اسم الـ LA' : 'LA Name',
+        currentLang === 'ar' ? 'المكتب' : 'Office',
+        currentLang === 'ar' ? 'الطلب' : 'Request',
+        currentLang === 'ar' ? 'الحالة' : 'Status',
+        currentLang === 'ar' ? 'التاريخ' : 'Date',
+        currentLang === 'ar' ? 'الوقت' : 'Time',
+        currentLang === 'ar' ? 'المشرف المنفذ' : 'Processed By'
+      ];
+
+      const csvRows = [headers.join(',')];
+
+      appData.requests.forEach(r => {
+        const d = new Date(r.ts);
+        const dateStr = d.toLocaleDateString('en-GB');
+        const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        const cell = v => `"${String(v || '').replace(/"/g, '""')}"`;
+
+        csvRows.push([
+          cell(r.id),
+          cell(r.branch),
+          cell(r.name),
+          cell(r.pid),
+          cell(r.phone),
+          cell(r.la_name),
+          cell(r.office),
+          cell(r.rt),
+          cell(r.status),
+          cell(dateStr),
+          cell(timeStr),
+          cell(r.by)
+        ].join(','));
+      });
+
+      // UTF-8 BOM so Arabic displays properly in Excel
+      const blob = new Blob(['\uFEFF' + csvRows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `noon-rider-ops-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast(currentLang === 'ar' ? '✅ تم تصدير الملف بنجاح' : '✅ Exported successfully');
+    };
+
+    /* =================================================================
+       Modal Handlers
+       ================================================================= */
+    $$('.close-modal').forEach(btn => {
+      btn.onclick = () => {
+        $$('.modal-overlay').forEach(m => m.classList.add('hidden'));
+      };
+    });
+
+    $('btn-quick-open-modal').onclick = () => {
+      $('modal-quick-open').classList.remove('hidden');
+    };
+
+    $('direct-open-form').onsubmit = async () => {
+      const pid = $('dir_pid').value.trim();
+      const name = $('dir_name').value.trim() || 'Rider';
+      const branch = $('dir_branch').value;
+      const phone = $('dir_phone').value.trim();
+      const rt = $('dir_rt').value;
+
+      if (!pid || !branch) {
+        showToast(currentLang === 'ar' ? 'يرجى إدخال الكود والفرع' : 'Enter ID and branch');
+        return;
+      }
+
+      const newReq = {
+        id: 'r_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        branch,
+        name,
+        pid,
+        phone,
+        office: 'مباشر',
+        rt,
+        status: 'done',
+        by: currentOpenerName || 'Dispatcher',
+        ts: Date.now(),
+        updated: Date.now(),
+        manual: true
+      };
+
+      appData.requests.unshift(newReq);
+      persistLocal();
+      await apiPost('/api/requests', newReq);
+
+      $('modal-quick-open').classList.add('hidden');
+      $('direct-open-form').reset();
+      showToast(currentLang === 'ar' ? '✓ تم تسجيل الفتح المباشر' : '✓ Direct shift saved');
+      renderAll();
+    };
+
+    $('btn-edit-my-branches').onclick = () => {
+      $('cfg_opener_name').value = currentOpenerName;
+      const container = $('opener-branch-checkboxes');
+      container.innerHTML = appData.branches.map(b => {
+        const checked = myAssignedBranches.includes(b) ? 'checked' : '';
+        return `
+          <label class="branch-select-item">
+            <input type="checkbox" value="${b}" ${checked}>
+            <span>${b}</span>
+          </label>
+        `;
+      }).join('');
+      $('modal-opener-branches').classList.remove('hidden');
+    };
+
+    $('btn-save-opener-branches').onclick = async () => {
+      const name = $('cfg_opener_name').value.trim();
+      if (name) {
+        currentOpenerName = name;
+        localStorage.setItem('noon_opener_name', name);
+      }
+      const selected = Array.from($$('#opener-branch-checkboxes input:checked')).map(el => el.value);
+      myAssignedBranches = selected;
+      localStorage.setItem('noon_my_branches', JSON.stringify(selected));
+
+      // Sync opener profile with server
+      await apiPost('/api/openers', {
+        name: currentOpenerName,
+        branches: myAssignedBranches
+      });
+
+      $('modal-opener-branches').classList.add('hidden');
+      updateRoleUI();
+      renderAll();
+      showToast(currentLang === 'ar' ? '✓ تم حفظ الفروع بنجاح' : '✓ Hubs saved successfully');
+    };
+
+    $('btn-manage-branches-modal').onclick = () => {
+      $('mgr-branches-textarea').value = appData.branches.join('\n');
+      $('modal-manage-branches').classList.remove('hidden');
+    };
+
+    $('btn-save-all-branches').onclick = async () => {
+      const lines = $('mgr-branches-textarea').value.split('\n').map(l => l.trim()).filter(Boolean);
+      const unique = [...new Set(lines)];
+      if (!unique.length) {
+        showToast(currentLang === 'ar' ? 'اكتب فرعاً واحداً على الأقل' : 'Enter at least one branch');
+        return;
+      }
+      appData.branches = unique;
+      persistLocal();
+      await apiPost('/api/branches', { branches: unique });
+      populateBranchSelects();
+      $('modal-manage-branches').classList.add('hidden');
+      showToast(currentLang === 'ar' ? '✓ تم تحديث الفروع' : '✓ Hubs updated');
+      renderAll();
+    };
+
+    $('btn-add-pilot-modal').onclick = () => {
+      $('modal-add-pilot').classList.remove('hidden');
+    };
+
+    $('add-pilot-form').onsubmit = async () => {
+      const name = $('p_name').value.trim();
+      const pid = $('p_pid').value.trim();
+      const branch = $('p_branch').value;
+      const phone = $('p_phone').value.trim();
+      const office = $('p_office').value.trim();
+
+      const newPilot = {
+        id: 'p_' + Date.now().toString(36),
+        name,
+        pid,
+        branch,
+        phone,
+        office
+      };
+
+      appData.pilots.push(newPilot);
+      persistLocal();
+      await apiPost('/api/pilots', newPilot);
+
+      $('add-pilot-form').reset();
+      $('modal-add-pilot').classList.add('hidden');
+      showToast(currentLang === 'ar' ? `✓ تمت إضافة الطيار ${name}` : `✓ Added rider ${name}`);
+      renderPilots();
+    };
+
+    /* =================================================================
+       Render All Views
+       ================================================================= */
+    function renderAll() {
+      renderBoard();
+      renderShifts();
+      renderPilots();
+      renderManagerDashboard();
+      renderMySubmissions();
+    }
+
+    function renderMySubmissions() {
+      const container = $('my-requests-list');
+      const myReqs = appData.requests.filter(r => mySubmissions.includes(r.id));
+
+      if (!myReqs.length) {
+        container.innerHTML = `<div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <h3>${currentLang === 'ar' ? 'لم ترسل أي طلبات من هذا الجهاز بعد' : 'No submissions yet'}</h3>
+        </div>`;
+        return;
+      }
+
+      container.innerHTML = myReqs.map(r => renderRequestCard(r)).join('');
+    }
+
+    /* =================================================================
+       Formatting Helpers
+       ================================================================= */
+    function formatTimeAgo(ts) {
+      const m = Math.floor((Date.now() - ts) / 60000);
+      if (m < 1) return currentLang === 'ar' ? 'الآن' : 'just now';
+      if (m < 60) return currentLang === 'ar' ? `منذ ${m} دقيقة` : `${m}m ago`;
+      const h = Math.floor(m / 60);
+      if (h < 24) return currentLang === 'ar' ? `منذ ${h} ساعة` : `${h}h ago`;
+      return new Date(ts).toLocaleDateString(currentLang === 'ar' ? 'ar-EG' : 'en-US');
+    }
+
+    function formatDuration(ms) {
+      const t = Math.max(0, Math.floor(ms / 1000));
+      const h = Math.floor(t / 3600);
+      const m = Math.floor((t % 3600) / 60);
+      return `${h}h ${m}m`;
+    }
+
+    function formatClock(ts) {
+      return new Date(ts).toLocaleTimeString(currentLang === 'ar' ? 'ar-EG' : 'en-US', {
+        hour: '2-digit', minute: '2-digit'
+      });
+    }
+
+    window.copyToClipboard = function(text, successMsg) {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast(successMsg || 'Copied!');
+        });
+      } else {
+        showToast(text);
+      }
+    };
+
+    // Filter event listeners
+    $('board-search').oninput = renderBoard;
+    $('board-status-filter').onchange = renderBoard;
+    $('board-scope-filter').onchange = renderBoard;
+    $('pilot-dir-search').oninput = renderPilots;
+    $('btn-refresh-my').onclick = renderMySubmissions;
+
+    // Periodic tick for shift timers and overdue alerts
+    setInterval(() => {
+      renderShifts();
+    }, 10000);
+
+    // Initial boot
+    setTheme(currentTheme);
+    setLanguage(currentLang);
+    updateRoleUI();
+    loadData();
+  </script>
+</body>
+</html>

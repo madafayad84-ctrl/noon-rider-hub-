@@ -1,0 +1,12 @@
+{
+  "name": "noon-rider-ops",
+  "version": "2.0.0",
+  "description": "noon Rider Hub - Real-time Rider Shift & Dispatch Operations System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["noon", "logistics", "rider", "dispatch", "operations"],
+  "author": "noon Logistics Operations Team",
+  "license": "ISC"
+}
