@@ -861,9 +861,17 @@
         <div style="background:var(--bg); padding:10px; border-radius:var(--radius-sm); font-family:monospace; font-size:16px; font-weight:bold; margin-bottom:14px;" id="submitted-code">
           REF: #0000
         </div>
-        <button id="btn-new-req" class="btn btn-noon">
-          ➕ <span data-i18n="btn_submit_another">إرسال طلب جديد</span>
-        </button>
+        <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+          <button id="btn-new-req" class="btn btn-noon">
+            ➕ <span data-i18n="btn_submit_another">إرسال طلب جديد</span>
+          </button>
+          <button id="btn-goto-my" class="btn btn-outline">
+            📋 <span data-i18n="nav_my">عرض في طلباتي</span>
+          </button>
+          <button id="btn-goto-board" class="btn btn-outline" style="border-color:var(--noon-yellow); color:#fff;">
+            📥 <span>عرض في لوحة الطلبات</span>
+          </button>
+        </div>
       </div>
     </section>
 
@@ -917,14 +925,14 @@
           </div>
           <div style="display: flex; gap: 6px;">
             <select id="board-status-filter" class="form-control">
+              <option value="all" selected data-i18n="filter_status_all">جميع الحالات</option>
               <option value="new" data-i18n="filter_status_new">طلبات جديدة معلقة</option>
-              <option value="all" data-i18n="filter_status_all">جميع الحالات</option>
               <option value="done" data-i18n="filter_status_done">تم تنفيذها</option>
               <option value="rejected" data-i18n="filter_status_rejected">مرفوضة</option>
             </select>
             <select id="board-scope-filter" class="form-control">
+              <option value="all" selected data-i18n="filter_scope_all">كل فروع نون</option>
               <option value="mine" data-i18n="filter_scope_mine">فروعي فقط</option>
-              <option value="all" data-i18n="filter_scope_all">كل فروع نون</option>
             </select>
           </div>
         </div>
@@ -1969,6 +1977,19 @@
       $('rider-form').style.display = 'block';
     };
 
+    $('btn-goto-my').onclick = () => {
+      switchTab('tab-my');
+    };
+
+    $('btn-goto-board').onclick = () => {
+      if (appRole !== 'opener' && appRole !== 'manager') {
+        appRole = 'opener';
+        localStorage.setItem('noon_role', 'opener');
+        updateRoleUI();
+      }
+      switchTab('tab-board');
+    };
+
     /* =================================================================
        Board Rendering & Actions (Opener View)
        ================================================================= */
@@ -2187,7 +2208,9 @@
       const container = $('shifts-container');
       const now = Date.now();
 
-      $('active-shifts-count').textContent = `${shifts.length} ${currentLang === 'ar' ? 'طيار نشط' : 'Active Riders'}`;
+      const pendingOpenReqs = appData.requests.filter(r => r.status === 'new' && (r.rt === 'طلب فتح وردية' || r.rt === 'فتح شيفت'));
+
+      $('active-shifts-count').textContent = `${shifts.length} ${currentLang === 'ar' ? 'طيار نشط' : 'Active Riders'}${pendingOpenReqs.length ? ` (${pendingOpenReqs.length} في الانتظار)` : ''}`;
       const overdueShifts = shifts.filter(s => s.end < now);
 
       // Overdue top ribbon
@@ -2203,7 +2226,46 @@
         $('badge-shifts').style.display = 'none';
       }
 
-      if (!shifts.length) {
+      let html = '';
+
+      // Section for Pending Shift Requests waiting for approval
+      if (pendingOpenReqs.length > 0) {
+        html += `
+          <div style="margin-bottom: 20px; padding: 14px; border: 2px solid var(--noon-yellow); border-radius: var(--radius-sm); background: rgba(254, 238, 0, 0.08);">
+            <div style="font-weight: 800; font-size: 15px; margin-bottom: 10px; color: var(--noon-yellow); display: flex; align-items: center; justify-content: space-between;">
+              <span>📥 ${currentLang === 'ar' ? 'طلبات فتح وردية جديدة في الانتظار' : 'Pending Shift Open Requests'} (${pendingOpenReqs.length})</span>
+              <span class="badge badge-urgent">${currentLang === 'ar' ? 'يحتاج تأكيد' : 'Action Required'}</span>
+            </div>
+            ${pendingOpenReqs.map(r => `
+              <div class="req-card" style="margin-bottom: 10px; border-left: 4px solid var(--noon-yellow);">
+                <div class="req-header">
+                  <div>
+                    <span class="rider-name">${r.name}</span>
+                    <span class="rider-id">#${r.pid}</span>
+                  </div>
+                  <span class="badge badge-new">${currentLang === 'ar' ? 'طلب جديد' : 'New Request'}</span>
+                </div>
+                <div class="req-meta-grid" style="margin: 8px 0;">
+                  <div class="meta-item">📍 <b>${r.branch}</b></div>
+                  <div class="meta-item">👤 LA: <b>${r.la_name || '-'}</b></div>
+                  <div class="meta-item">📞 <b>${r.phone || '-'}</b></div>
+                  <div class="meta-item">⏱ <b>${formatTimeAgo(r.ts)}</b></div>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 10px;">
+                  <button class="btn btn-success btn-sm" onclick="handleRequestAction('${r.id}', 'done')" style="flex: 1;">
+                    ✓ ${currentLang === 'ar' ? 'تأكيد الفتح وبدء الـ 11 ساعة فوراً' : 'Confirm & Start 11h Shift'}
+                  </button>
+                  <button class="btn btn-danger btn-sm" onclick="promptRejectModal('${r.id}')">
+                    ✕ ${currentLang === 'ar' ? 'رفض' : 'Reject'}
+                  </button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      if (!shifts.length && !pendingOpenReqs.length) {
         container.innerHTML = `<div class="empty-state">
           <div class="empty-icon">☕</div>
           <h3>${currentLang === 'ar' ? 'لا توجد شيفتات مفتوحة حالياً' : 'No active shifts currently'}</h3>
@@ -2211,7 +2273,7 @@
         return;
       }
 
-      container.innerHTML = shifts.map(s => {
+      html += shifts.map(s => {
         const r = s.request;
         const elapsedMs = now - s.start;
         const remainingMs = s.end - now;
@@ -2270,6 +2332,8 @@
           </div>
         `;
       }).join('');
+
+      container.innerHTML = html;
     }
 
     window.closeShiftDirect = async function(branch, pid, name) {
