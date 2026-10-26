@@ -1748,6 +1748,7 @@
        Data Synchronization (Server REST/SSE + Local Fallback)
        ================================================================= */
     const isFileMode = window.location.protocol === 'file:';
+    const isGitHubPages = window.location.hostname.includes('github.io');
     const API_BASE = isFileMode ? 'http://localhost:3000' : '';
 
     async function loadData() {
@@ -1756,20 +1757,38 @@
       if (localCached) {
         try {
           const parsed = JSON.parse(localCached);
-          appData = Object.assign(appData, parsed);
+          if (parsed.requests && parsed.requests.length) appData.requests = parsed.requests;
+          if (parsed.pilots && parsed.pilots.length) appData.pilots = parsed.pilots;
+          if (parsed.branches && parsed.branches.length) appData.branches = parsed.branches;
+          if (parsed.openers) appData.openers = parsed.openers;
+          if (parsed.config) appData.config = Object.assign(appData.config, parsed.config);
         } catch(e) {}
+      }
+
+      // On GitHub Pages there is no backend API, go straight to local mode
+      if (isGitHubPages || isFileMode) {
+        fallbackLocalMode();
+        persistLocal();
+        populateBranchSelects();
+        renderAll();
+        return;
       }
 
       // Check if server is reachable
       try {
         const res = await fetch(API_BASE + '/api/data', { cache: 'no-store' });
         if (res.ok) {
-          const remoteData = await res.json();
-          appData = remoteData;
-          isServerConnected = true;
-          $('sync-dot').className = 'dot live';
-          $('sync-text').textContent = currentLang === 'ar' ? '🟢 متصل بالسيرفر المباشر (مزامنة فورية لكل الأجهزة)' : '🟢 Connected to Live Server (Real-time sync)';
-          setupSSE();
+          const ct = res.headers.get('content-type') || '';
+          if (ct.includes('application/json')) {
+            const remoteData = await res.json();
+            appData = remoteData;
+            isServerConnected = true;
+            $('sync-dot').className = 'dot live';
+            $('sync-text').textContent = currentLang === 'ar' ? '🟢 متصل بالسيرفر المباشر (مزامنة فورية لكل الأجهزة)' : '🟢 Connected to Live Server (Real-time sync)';
+            setupSSE();
+          } else {
+            fallbackLocalMode();
+          }
         } else {
           fallbackLocalMode();
         }
@@ -1923,10 +1942,11 @@
       const serverRes = await apiPost('/api/requests', newReq);
       const finalReq = serverRes || newReq;
 
-      if (!serverRes) {
+      // Always add to local data and persist
+      if (!appData.requests.some(r => r.id === finalReq.id)) {
         appData.requests.unshift(finalReq);
-        persistLocal();
       }
+      persistLocal();
 
       // Add to my submissions
       mySubmissions.unshift(finalReq.id);

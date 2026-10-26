@@ -5,7 +5,9 @@ const url = require('url');
 const { DatabaseSync } = require('node:sqlite');
 
 const PORT = process.env.PORT || 3000;
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = fs.existsSync(path.join(__dirname, '.data'))
+  ? path.join(__dirname, '.data')
+  : path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'noon_ops.db');
 const OLD_JSON_DB = path.join(DATA_DIR, 'db.json');
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -13,16 +15,137 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(PUBLIC_DIR)) fs.mkdirSync(PUBLIC_DIR, { recursive: true });
 
-// Initialize Native SQLite Database
-const db = new DatabaseSync(DB_FILE);
+// Universal Database Adapter: Native SQLite (WAL) with Automatic In-Memory JSON fallback
+let db;
+try {
+  const { DatabaseSync } = require('node:sqlite');
+  db = new DatabaseSync(DB_FILE);
+  db.exec(`
+    PRAGMA journal_mode = WAL;
+    PRAGMA synchronous = NORMAL;
+    PRAGMA cache_size = -64000;
+    PRAGMA foreign_keys = ON;
+  `);
+} catch (e) {
+  console.log('⚠️ Native node:sqlite not present. Initializing High-Performance Universal JSON DB Engine...');
+  // Universal DB Engine for maximum cloud compatibility
+  const JSON_STORE = path.join(DATA_DIR, 'noon_universal_store.json');
+  let memoryData = {
+    branches: [],
+    pilots: [],
+    requests: [],
+    openers: [],
+    config: {}
+  };
+  if (fs.existsSync(JSON_STORE)) {
+    try { memoryData = JSON.parse(fs.readFileSync(JSON_STORE, 'utf8')); } catch (_) {}
+  }
+  const saveStore = () => {
+    try { fs.writeFileSync(JSON_STORE, JSON.stringify(memoryData, null, 2)); } catch (_) {}
+  };
 
-// Enable WAL mode for ultra-fast concurrent reading and writing
-db.exec(`
-  PRAGMA journal_mode = WAL;
-  PRAGMA synchronous = NORMAL;
-  PRAGMA cache_size = -64000; -- 64MB cache
-  PRAGMA foreign_keys = ON;
-
+  db = {
+    exec: (sql) => {},
+    prepare: (sql) => {
+      const lower = sql.toLowerCase().trim();
+      return {
+        get: (...params) => {
+          if (lower.includes('count(*) as cnt from branches') || lower.includes('count(*) as c from branches')) return { cnt: memoryData.branches.length, c: memoryData.branches.length };
+          if (lower.includes('count(*) as cnt from pilots') || lower.includes('count(*) as c from pilots')) return { cnt: memoryData.pilots.length, c: memoryData.pilots.length };
+          if (lower.includes('count(*) as c from requests where status = \'new\'')) {
+            const count = memoryData.requests.filter(r => r.status === 'new').length;
+            return { c: count };
+          }
+          if (lower.includes('count(*) as c from requests where status = \'done\'')) {
+            const dayStart = params[0] || 0;
+            const count = memoryData.requests.filter(r => r.status === 'done' && r.updated >= dayStart).length;
+            return { c: count };
+          }
+          if (lower.includes('avg(updated - ts) as avgms')) {
+            const dayStart = params[0] || 0;
+            const done = memoryData.requests.filter(r => r.status === 'done' && r.updated >= dayStart && !r.manual);
+            if (!done.length) return { avgMs: 0 };
+            const avg = done.reduce((acc, r) => acc + (r.updated - r.ts), 0) / done.length;
+            return { avgMs: avg };
+          }
+          if (lower.includes('count(*) as c from requests')) return { c: memoryData.requests.length };
+          if (lower.includes('from requests where id = ?')) {
+            const found = memoryData.requests.find(r => r.id === params[0]);
+            return found ? { ...found } : null;
+          }
+          return null;
+        },
+        all: (...params) => {
+          if (lower.includes('from branches order by name')) return [...memoryData.branches].sort((a,b) => a.name.localeCompare(b.name));
+          if (lower.includes('from pilots')) {
+            if (lower.includes('like ?')) {
+              const q = (params[0] || '').replace(/%/g, '').toLowerCase();
+              return memoryData.pilots.filter(p => 
+                (p.pid && p.pid.toLowerCase().includes(q)) || 
+                (p.name && p.name.toLowerCase().includes(q)) || 
+                (p.phone && p.phone.includes(q))
+              ).slice(0, 50);
+            }
+            return [...memoryData.pilots].sort((a,b) => a.name.localeCompare(b.name)).slice(0, 3000);
+          }
+          if (lower.includes('from requests')) {
+            let res = [...memoryData.requests];
+            if (lower.includes('where')) {
+              // Simple filter handler
+              if (params.length && lower.includes('status = ?')) res = res.filter(r => r.status === params[0]);
+            }
+            return res.sort((a,b) => b.ts - a.ts).slice(0, 800);
+          }
+          if (lower.includes('from openers')) return [...memoryData.openers];
+          return [];
+        },
+        run: (...params) => {
+          if (lower.startsWith('insert or ignore into branches') || lower.startsWith('insert into branches')) {
+            const [id, name, zone, city] = params;
+            if (!memoryData.branches.find(b => b.name === name)) {
+              memoryData.branches.push({ id, name, zone: zone || '', city: city || 'القاهرة والجيزة', active: 1 });
+              saveStore();
+            }
+          } else if (lower.startsWith('insert or replace into pilots') || lower.startsWith('insert or ignore into pilots')) {
+            const [id, pid, name, branch, office, phone, arg7, arg8] = params;
+            const existingIdx = memoryData.pilots.findIndex(p => p.pid === pid);
+            const pObj = { id, pid, name, branch, office: office || '', phone: phone || '', status: 'active', created: Date.now() };
+            if (existingIdx >= 0) memoryData.pilots[existingIdx] = pObj;
+            else memoryData.pilots.push(pObj);
+            saveStore();
+          } else if (lower.startsWith('insert into requests') || lower.startsWith('insert or ignore into requests')) {
+            const [id, branch, name, pid, phone, la_name, office, rt, notes, urg, status, ts, updated, by, reason, claimedBy, manual] = params;
+            memoryData.requests.push({ id, branch, name, pid, phone: phone || '', la_name: la_name || '', office: office || '', rt, notes: notes || '', urg: urg || 0, status: status || 'new', ts, updated, by: by || '', reason: reason || '', claimedBy: claimedBy || '', manual: manual || 0 });
+            saveStore();
+          } else if (lower.startsWith('update requests')) {
+            const id = params[params.length - 1];
+            const r = memoryData.requests.find(x => x.id === id);
+            if (r) {
+              if (lower.includes('status = ?')) r.status = params[0];
+              if (lower.includes('updated = ?')) r.updated = params[lower.includes('status = ?') ? 1 : 0];
+              if (lower.includes('claimedby = ?')) r.claimedBy = params[lower.includes('updated = ?') ? 2 : 1];
+              saveStore();
+            }
+          } else if (lower.startsWith('delete from requests')) {
+            memoryData.requests = memoryData.requests.filter(r => r.id !== params[0]);
+            saveStore();
+          } else if (lower.startsWith('delete from branches')) {
+            memoryData.branches = [];
+            saveStore();
+          } else if (lower.startsWith('insert or replace into openers')) {
+            const [id, name, branches_json, updated] = params;
+            const idx = memoryData.openers.findIndex(o => o.id === id);
+            const obj = { id, name, branches_json, updated };
+            if (idx >= 0) memoryData.openers[idx] = obj;
+            else memoryData.openers.push(obj);
+            saveStore();
+          }
+          return { changes: 1 };
+        }
+      };
+    }
+  };
+}
   CREATE TABLE IF NOT EXISTS branches (
     id TEXT PRIMARY KEY,
     name TEXT UNIQUE NOT NULL,
