@@ -518,14 +518,15 @@ const server = http.createServer(async (req, res) => {
 
   // Serve Static Frontend Files
   let filePath = path.join(PUBLIC_DIR, pathname === '/' ? 'index.html' : pathname);
-  if (!filePath.startsWith(PUBLIC_DIR)) {
-    res.writeHead(403);
-    return res.end('Access denied');
+  if (!fs.existsSync(filePath)) {
+    filePath = path.join(__dirname, pathname === '/' ? 'index.html' : pathname);
   }
 
   fs.stat(filePath, (err, stats) => {
     if (err || !stats.isFile()) {
-      const indexPath = path.join(PUBLIC_DIR, 'index.html');
+      const indexPath = fs.existsSync(path.join(PUBLIC_DIR, 'index.html'))
+        ? path.join(PUBLIC_DIR, 'index.html')
+        : path.join(__dirname, 'index.html');
       if (fs.existsSync(indexPath)) {
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         fs.createReadStream(indexPath).pipe(res);

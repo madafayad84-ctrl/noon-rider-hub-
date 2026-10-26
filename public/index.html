@@ -983,9 +983,10 @@
             <h2 style="font-size: 20px; font-weight: 900; color: var(--noon-yellow);">📊 مركز تحكم قيادة العمليات (Executive Ops Hub)</h2>
             <div style="font-size: 13px; color: #cbd5e1;" id="mgr-current-date">اليوم | تقرير حي ومباشر</div>
           </div>
-          <div style="display: flex; gap: 8px;">
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button id="btn-export-csv" class="btn btn-noon btn-sm">⬇️ <span data-i18n="btn_export_csv">تصدير إكسيل (Excel / CSV)</span></button>
             <button id="btn-manage-branches-modal" class="btn btn-outline btn-sm" style="color:#fff; border-color:#475569;">⚙️ <span data-i18n="btn_manage_branches">إدارة الفروع</span></button>
+            <button id="btn-change-pins-modal" class="btn btn-outline btn-sm" style="color:#fff; border-color:#475569;">🔒 <span data-i18n="btn_change_pins">تغيير الأكواد</span></button>
           </div>
         </div>
       </div>
@@ -1057,6 +1058,56 @@
   </main>
 
   <!-- ==================== MODALS ==================== -->
+
+  <!-- Modal: Secure Role Authentication (Masked Password Modal) -->
+  <div id="modal-auth-login" class="modal-overlay hidden">
+    <div class="modal-box" style="max-width: 420px; text-align: center;">
+      <div class="modal-title" style="justify-content: center; margin-bottom: 6px;">
+        <span>🔐 <span data-i18n="modal_auth_title">التحقق من الصلاحيات</span></span>
+      </div>
+      <p style="font-size: 13.5px; color: var(--text-muted); margin-bottom: 16px;" data-i18n="modal_auth_desc">
+        يرجى إدخال كود الدخول المصرح به للمتابعة إلى لوحة التحكم
+      </p>
+
+      <form id="auth-login-form" onsubmit="return false;">
+        <div class="form-group" style="position: relative;">
+          <input type="password" id="auth-pin-input" class="form-control" inputmode="numeric" maxlength="10" placeholder="••••" style="font-size: 26px; letter-spacing: 8px; text-align: center; padding: 12px;" required autocomplete="current-password">
+          <button type="button" id="btn-toggle-pin-visibility" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px;" title="إظهار / إخفاء">👁</button>
+        </div>
+
+        <div id="auth-error-msg" style="color: var(--danger); font-size: 13px; font-weight: 700; margin-bottom: 12px; min-height: 20px;"></div>
+
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-outline close-modal" style="flex: 1;" data-i18n="btn_cancel">إلغاء</button>
+          <button type="submit" class="btn btn-noon" style="flex: 2;">🔓 <span data-i18n="btn_verify">تسجيل الدخول</span></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Change Security PINs -->
+  <div id="modal-change-pins" class="modal-overlay hidden">
+    <div class="modal-box" style="max-width: 440px;">
+      <div class="modal-title">
+        <span>🔒 <span data-i18n="modal_pins_title">إدارة وتغيير أكواد المرور السرية</span></span>
+        <button class="btn btn-outline btn-sm close-modal">✖</button>
+      </div>
+      <form id="change-pins-form" onsubmit="return false;">
+        <div class="form-group">
+          <label>🔑 كود فريق فتح الشيفتات الجديد (Opener PIN):</label>
+          <input type="password" id="cfg_new_opener_pin" class="form-control" inputmode="numeric" placeholder="مثال: 5821" required>
+        </div>
+        <div class="form-group">
+          <label>👑 كود المدير التنفيذي الجديد (Manager PIN):</label>
+          <input type="password" id="cfg_new_mgr_pin" class="form-control" inputmode="numeric" placeholder="مثال: 7700" required>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+          <button type="button" class="btn btn-outline close-modal" data-i18n="btn_cancel">إلغاء</button>
+          <button type="submit" class="btn btn-noon">حفظ الأكواد الجديدة</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- Modal: Direct Shift Open -->
   <div id="modal-quick-open" class="modal-overlay hidden">
@@ -1594,29 +1645,75 @@
         localStorage.setItem('noon_role', 'la');
         updateRoleUI();
         switchTab('tab-form');
-        showToast(currentLang === 'ar' ? 'تم الخروج من وضع المشرف' : 'Logged out of dispatcher role');
+        showToast(currentLang === 'ar' ? 'تم الخروج من لوحة التحكم' : 'Logged out');
       } else {
-        const pin = prompt(currentLang === 'ar' ? 'أدخل كود المرور لفريق الفتح (5821) أو كود المدير (7700):' : 'Enter Dispatch PIN (5821) or Manager PIN (7700):');
-        if (pin === '7700') {
-          appRole = 'manager';
-          localStorage.setItem('noon_role', 'manager');
-          updateRoleUI();
-          switchTab('tab-board');
-          showToast(currentLang === 'ar' ? 'مرحباً بالمدير! تم تفعيل لوحة القيادة 📊' : 'Welcome Manager! Command hub active 📊');
-        } else if (pin === '5821' || pin === '1234') {
-          appRole = 'opener';
-          localStorage.setItem('noon_role', 'opener');
-          if (!currentOpenerName) {
-            currentOpenerName = prompt(currentLang === 'ar' ? 'اكتب اسمك كمسؤول فتح شيفتات:' : 'Enter your name as Dispatcher:') || 'Dispatcher';
-            localStorage.setItem('noon_opener_name', currentOpenerName);
-          }
-          updateRoleUI();
-          switchTab('tab-board');
-          showToast(currentLang === 'ar' ? 'تم تسجيل الدخول كمسؤول فتح شيفتات 🛵' : 'Logged in as Dispatcher 🛵');
-        } else if (pin !== null) {
-          showToast(currentLang === 'ar' ? '❌ كود المرور غير صحيح' : '❌ Invalid PIN code');
-        }
+        $('auth-pin-input').value = '';
+        $('auth-error-msg').textContent = '';
+        $('modal-auth-login').classList.remove('hidden');
+        setTimeout(() => $('auth-pin-input').focus(), 100);
       }
+    };
+
+    $('btn-toggle-pin-visibility').onclick = () => {
+      const inp = $('auth-pin-input');
+      inp.type = inp.type === 'password' ? 'text' : 'password';
+      $('btn-toggle-pin-visibility').textContent = inp.type === 'password' ? '👁' : '🙈';
+    };
+
+    $('auth-login-form').onsubmit = () => {
+      const pin = $('auth-pin-input').value.trim();
+      const openerPin = localStorage.getItem('noon_opener_pin') || (appData.config && appData.config.pin) || '5821';
+      const mgrPin = localStorage.getItem('noon_mgr_pin') || (appData.config && appData.config.mgrPin) || '7700';
+
+      if (pin === mgrPin) {
+        appRole = 'manager';
+        localStorage.setItem('noon_role', 'manager');
+        updateRoleUI();
+        $('modal-auth-login').classList.add('hidden');
+        switchTab('tab-board');
+        showToast(currentLang === 'ar' ? 'مرحباً بالمدير! تم التحقق بنجاح 📊' : 'Welcome Manager! Access granted 📊');
+      } else if (pin === openerPin) {
+        appRole = 'opener';
+        localStorage.setItem('noon_role', 'opener');
+        if (!currentOpenerName) {
+          currentOpenerName = currentLang === 'ar' ? 'مشرف الفتح' : 'Dispatcher';
+          localStorage.setItem('noon_opener_name', currentOpenerName);
+        }
+        updateRoleUI();
+        $('modal-auth-login').classList.add('hidden');
+        switchTab('tab-board');
+        showToast(currentLang === 'ar' ? 'تم تسجيل الدخول كمسؤول فتح شيفتات 🛵' : 'Logged in as Dispatcher 🛵');
+      } else {
+        $('auth-error-msg').textContent = currentLang === 'ar' ? '❌ كود المرور غير صحيح' : '❌ Invalid PIN code';
+        $('auth-pin-input').classList.add('error');
+        setTimeout(() => $('auth-pin-input').classList.remove('error'), 1200);
+      }
+    };
+
+    $('btn-change-pins-modal').onclick = () => {
+      const openerPin = localStorage.getItem('noon_opener_pin') || (appData.config && appData.config.pin) || '5821';
+      const mgrPin = localStorage.getItem('noon_mgr_pin') || (appData.config && appData.config.mgrPin) || '7700';
+      $('cfg_new_opener_pin').value = openerPin;
+      $('cfg_new_mgr_pin').value = mgrPin;
+      $('modal-change-pins').classList.remove('hidden');
+    };
+
+    $('change-pins-form').onsubmit = () => {
+      const oPin = $('cfg_new_opener_pin').value.trim();
+      const mPin = $('cfg_new_mgr_pin').value.trim();
+      if (!oPin || !mPin) {
+        showToast(currentLang === 'ar' ? 'يرجى إدخال الأكواد' : 'Please enter PIN codes');
+        return;
+      }
+      localStorage.setItem('noon_opener_pin', oPin);
+      localStorage.setItem('noon_mgr_pin', mPin);
+      if (appData.config) {
+        appData.config.pin = oPin;
+        appData.config.mgrPin = mPin;
+      }
+      persistLocal();
+      $('modal-change-pins').classList.add('hidden');
+      showToast(currentLang === 'ar' ? '✅ تم تحديث وحفظ أكواد المرور السرية بنجاح' : '✅ Security PINs updated successfully');
     };
 
     /* =================================================================

@@ -6,6 +6,9 @@
   "scripts": {
     "start": "node server.js"
   },
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "keywords": ["noon", "logistics", "rider", "dispatch", "operations"],
   "author": "noon Logistics Operations Team",
   "license": "ISC"
