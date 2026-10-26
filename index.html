@@ -673,6 +673,7 @@
     }
     .empty-icon { font-size: 40px; margin-bottom: 8px; }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
 </head>
 <body>
 
@@ -1766,6 +1767,77 @@
     const CLOUD_KEY = _cc.map(c => String.fromCharCode(c)).join('');
     let isCloudSyncing = false;
 
+        // Real-Time High-Speed WebSocket Mesh (Instant sub-second delivery between all branches)
+    const MQTT_TOPIC_REQ = 'noon/ops/mada84/requests';
+    const MQTT_TOPIC_UPDATE = 'noon/ops/mada84/updates';
+    let mqttClient = null;
+
+    function initRealtimeWebSocket() {
+      try {
+        if (typeof mqtt === 'undefined') return;
+        const brokerUrl = 'wss://broker.hivemq.com:8884/mqtt';
+        mqttClient = mqtt.connect(brokerUrl, {
+          clientId: 'noon_' + Math.random().toString(16).slice(2, 10),
+          keepalive: 30,
+          reconnectPeriod: 2500
+        });
+
+        mqttClient.on('connect', () => {
+          console.log('⚡ Realtime WebSocket Connected!');
+          $('sync-dot').className = 'dot live';
+          $('sync-text').textContent = currentLang === 'ar' ? '🟢 متصل بالسحابة والشبكة الفورية (<1 ثانية)' : '🟢 Connected to Cloud & Live Mesh (<1s)';
+          mqttClient.subscribe([MQTT_TOPIC_REQ, MQTT_TOPIC_UPDATE]);
+        });
+
+        mqttClient.on('message', (topic, payload) => {
+          try {
+            const data = JSON.parse(payload.toString());
+            if (topic === MQTT_TOPIC_REQ) {
+              if (!appData.requests.some(r => r.id === data.id)) {
+                appData.requests.unshift(data);
+                persistLocal();
+                playBeep();
+                renderAll();
+                showToast(currentLang === 'ar' ? ('⚡ وصول طلب فوري: ' + data.name + ' (' + data.branch + ')') : ('⚡ Live Request: ' + data.name));
+              }
+            } else if (topic === MQTT_TOPIC_UPDATE) {
+              const idx = appData.requests.findIndex(r => r.id === data.id);
+              if (idx !== -1) {
+                Object.assign(appData.requests[idx], data.updates);
+                persistLocal();
+                renderAll();
+              }
+            }
+          } catch(e) {}
+        });
+
+        mqttClient.on('error', () => {
+          try {
+            mqttClient.end(true);
+            mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
+              clientId: 'noon_' + Math.random().toString(16).slice(2, 10),
+              keepalive: 30
+            });
+            mqttClient.subscribe([MQTT_TOPIC_REQ, MQTT_TOPIC_UPDATE]);
+          } catch(_) {}
+        });
+      } catch (e) {
+        console.warn('Realtime WS error:', e);
+      }
+    }
+
+    function broadcastRealtimeRequest(req) {
+      if (mqttClient && mqttClient.connected) {
+        try { mqttClient.publish(MQTT_TOPIC_REQ, JSON.stringify(req), { qos: 1 }); } catch(_) {}
+      }
+    }
+
+    function broadcastRealtimeUpdate(id, updates) {
+      if (mqttClient && mqttClient.connected) {
+        try { mqttClient.publish(MQTT_TOPIC_UPDATE, JSON.stringify({ id, updates }), { qos: 1 }); } catch(_) {}
+      }
+    }
+
     async function syncWithCloud() {
       if (isCloudSyncing) return;
       isCloudSyncing = true;
@@ -1884,6 +1956,7 @@
       renderAll();
 
       // Immediately synchronize with centralized Cloud database
+      initRealtimeWebSocket();
       await syncWithCloud();
 
       // Poll cloud every 6 seconds so all 30 branches stay updated in real time!
@@ -2038,6 +2111,7 @@
       }
       persistLocal();
       cloudCreateRequest(finalReq);
+      broadcastRealtimeRequest(finalReq);
 
       // Add to my submissions
       mySubmissions.unshift(finalReq.id);
@@ -2227,6 +2301,7 @@
       await apiPatch(`/api/requests/${id}`, updates);
       persistLocal();
       cloudUpdateRequest(req);
+      broadcastRealtimeUpdate(id, updates);
       showToast(newStatus === 'done'
         ? (currentLang === 'ar' ? '✓ تم تنفيذ الطلب' : '✓ Request completed')
         : (currentLang === 'ar' ? 'تم تحديث الطلب' : 'Request updated')
@@ -2437,6 +2512,7 @@
       appData.requests.unshift(newReq);
       persistLocal();
       cloudCreateRequest(newReq);
+      broadcastRealtimeRequest(newReq);
       await apiPost('/api/requests', newReq);
 
       showToast(currentLang === 'ar' ? `تم قفل شيفت الطيار ${name}` : `Closed shift for ${name}`);
