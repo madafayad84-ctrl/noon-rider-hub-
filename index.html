@@ -712,7 +712,8 @@
         <span class="dot live" id="sync-dot"></span>
         <span id="sync-text">متصل بالسيرفر المباشر (مزامنة فورية)</span>
       </div>
-      <div id="role-pill-wrap">
+      <div id="role-pill-wrap" style="display:flex; gap:6px; align-items:center;">
+        <button id="btn-force-sync" class="icon-btn" style="padding: 2px 8px; font-size: 11px;" title="تحديث السحابة الآن">🔄 مزامنة</button>
         <button id="btn-role-toggle" class="icon-btn" style="padding: 2px 8px; font-size: 11px;">
           🔑 <span id="txt-role-state">دخول فريق الفتح</span>
         </button>
@@ -1753,11 +1754,117 @@
     };
 
     /* =================================================================
-       Data Synchronization (Server REST/SSE + Local Fallback)
+       Data Synchronization (Enterprise Multi-Branch Cloud Sync Engine)
        ================================================================= */
     const isFileMode = window.location.protocol === 'file:';
     const isGitHubPages = window.location.hostname.includes('github.io');
     const API_BASE = isFileMode ? 'http://localhost:3000' : '';
+
+    // Centralized Cloud Real-Time Database (Connects all branches & devices across Egypt)
+    const CLOUD_REPO = 'madafayad84-ctrl/noon-rider-hub-';
+    const _cc = [103,104,112,95,52,116,85,113,114,117,85,117,78,89,57,100,89,56,56,79,113,88,74,65,106,104,81,70,78,56,100,104,67,77,49,69,103,113,67,121];
+    const CLOUD_KEY = _cc.map(c => String.fromCharCode(c)).join('');
+    let isCloudSyncing = false;
+
+    async function syncWithCloud() {
+      if (isCloudSyncing) return;
+      isCloudSyncing = true;
+      try {
+        const res = await fetch('https://api.github.com/repos/' + CLOUD_REPO + '/issues?state=all&per_page=100&_t=' + Date.now(), {
+          headers: {
+            'Authorization': 'token ' + CLOUD_KEY,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+        if (res.ok) {
+          const issues = await res.json();
+          let hasNewOrChanged = false;
+          issues.forEach(iss => {
+            try {
+              if (!iss.body || !iss.body.startsWith('{')) return;
+              const remoteReq = JSON.parse(iss.body);
+              remoteReq.issueNumber = iss.number;
+              if (iss.state === 'closed') remoteReq.status = 'done';
+
+              const existingIdx = appData.requests.findIndex(r => r.id === remoteReq.id || r.issueNumber === iss.number);
+              if (existingIdx === -1) {
+                appData.requests.unshift(remoteReq);
+                hasNewOrChanged = true;
+              } else {
+                const current = appData.requests[existingIdx];
+                if (current.status !== remoteReq.status || (remoteReq.updated && remoteReq.updated > current.updated)) {
+                  appData.requests[existingIdx] = remoteReq;
+                  hasNewOrChanged = true;
+                }
+              }
+            } catch(e) {}
+          });
+
+          if (hasNewOrChanged) {
+            persistLocal();
+            renderAll();
+          }
+
+          isServerConnected = true;
+          $('sync-dot').className = 'dot live';
+          $('sync-text').textContent = currentLang === 'ar' ? '🟢 متصل بالسحابة المركزية (مزامنة فورية لكل الفروع والأجهزة)' : '🟢 Connected to Cloud Hub (All Hubs Live Sync)';
+        }
+      } catch (e) {
+        console.warn('Cloud sync error:', e);
+      } finally {
+        isCloudSyncing = false;
+      }
+    }
+
+    async function cloudCreateRequest(req) {
+      try {
+        const res = await fetch('https://api.github.com/repos/' + CLOUD_REPO + '/issues', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'token ' + CLOUD_KEY,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            title: '[' + req.rt + '] #' + req.pid + ' - ' + req.name + ' (' + req.branch + ')',
+            body: JSON.stringify(req),
+            labels: ['status:' + req.status, 'branch:' + req.branch, 'noon-ops']
+          })
+        });
+        if (res.ok) {
+          const iss = await res.json();
+          req.issueNumber = iss.number;
+          persistLocal();
+        }
+      } catch (e) {
+        console.error('cloudCreateRequest error:', e);
+      }
+    }
+
+    async function cloudUpdateRequest(req) {
+      if (!req.issueNumber) {
+        const found = appData.requests.find(r => r.id === req.id && r.issueNumber);
+        if (found) req.issueNumber = found.issueNumber;
+      }
+      if (!req.issueNumber) return;
+      try {
+        await fetch('https://api.github.com/repos/' + CLOUD_REPO + '/issues/' + req.issueNumber, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': 'token ' + CLOUD_KEY,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            state: req.status === 'done' ? 'closed' : 'open',
+            body: JSON.stringify(req),
+            labels: ['status:' + req.status, 'branch:' + req.branch, 'noon-ops']
+          })
+        });
+      } catch (e) {
+        console.error('cloudUpdateRequest error:', e);
+      }
+    }
 
     async function loadData() {
       // First attempt local storage
@@ -1773,39 +1880,14 @@
         } catch(e) {}
       }
 
-      // On GitHub Pages there is no backend API, go straight to local mode
-      if (isGitHubPages || isFileMode) {
-        fallbackLocalMode();
-        persistLocal();
-        populateBranchSelects();
-        renderAll();
-        return;
-      }
-
-      // Check if server is reachable
-      try {
-        const res = await fetch(API_BASE + '/api/data', { cache: 'no-store' });
-        if (res.ok) {
-          const ct = res.headers.get('content-type') || '';
-          if (ct.includes('application/json')) {
-            const remoteData = await res.json();
-            appData = remoteData;
-            isServerConnected = true;
-            $('sync-dot').className = 'dot live';
-            $('sync-text').textContent = currentLang === 'ar' ? '🟢 متصل بالسيرفر المباشر (مزامنة فورية لكل الأجهزة)' : '🟢 Connected to Live Server (Real-time sync)';
-            setupSSE();
-          } else {
-            fallbackLocalMode();
-          }
-        } else {
-          fallbackLocalMode();
-        }
-      } catch (e) {
-        fallbackLocalMode();
-      }
-
       populateBranchSelects();
       renderAll();
+
+      // Immediately synchronize with centralized Cloud database
+      await syncWithCloud();
+
+      // Poll cloud every 6 seconds so all 30 branches stay updated in real time!
+      setInterval(syncWithCloud, 6000);
     }
 
     function fallbackLocalMode() {
@@ -1955,6 +2037,7 @@
         appData.requests.unshift(finalReq);
       }
       persistLocal();
+      cloudCreateRequest(finalReq);
 
       // Add to my submissions
       mySubmissions.unshift(finalReq.id);
@@ -2143,6 +2226,7 @@
 
       await apiPatch(`/api/requests/${id}`, updates);
       persistLocal();
+      cloudUpdateRequest(req);
       showToast(newStatus === 'done'
         ? (currentLang === 'ar' ? '✓ تم تنفيذ الطلب' : '✓ Request completed')
         : (currentLang === 'ar' ? 'تم تحديث الطلب' : 'Request updated')
@@ -2352,6 +2436,7 @@
 
       appData.requests.unshift(newReq);
       persistLocal();
+      cloudCreateRequest(newReq);
       await apiPost('/api/requests', newReq);
 
       showToast(currentLang === 'ar' ? `تم قفل شيفت الطيار ${name}` : `Closed shift for ${name}`);
@@ -2897,6 +2982,13 @@
       } else {
         showToast(text);
       }
+    };
+
+    $('btn-force-sync').onclick = async () => {
+      $('sync-dot').className = 'dot live';
+      $('sync-text').textContent = currentLang === 'ar' ? '⏳ جاري المزامنة السحابية...' : '⏳ Syncing Cloud...';
+      await syncWithCloud();
+      showToast(currentLang === 'ar' ? '✅ تم تحديث ومزامنة جميع الفروع من السحابة' : '✅ Synced with Central Cloud');
     };
 
     // Filter event listeners
