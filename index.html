@@ -820,10 +820,7 @@
           🌙
         </button>
         
-        <!-- Test Loud Alert Button -->
-        <button id="btn-test-sound" class="icon-btn" title="تجربة الصوت العالي | Test Loud Audio Alert" style="color:var(--noon-yellow); border-color:var(--noon-yellow); font-weight:700;">
-          🔊 <span>تجربة الصوت العالي</span>
-        </button>
+        
         <!-- Sound alert toggle -->
         <button id="btn-sound" class="icon-btn active" title="الصوت | Audio Alerts">
           🔔
@@ -1768,7 +1765,11 @@
       branches: [
         'التجمع الخامس', 'المعادي', 'مدينة نصر', 'مصر الجديدة',
         'المهندسين', 'الدقي', 'الشيخ زايد', '6 أكتوبر',
-        'الرحاب', 'الشروق', 'العبور', 'حلوان', 'شبرا', 'فيصل والهرم'
+        'الرحاب', 'الشروق', 'العبور', 'حلوان', 'شبرا', 'فيصل والهرم',
+        'المقطم', 'الزمالك', 'وسط البلد', 'عين شمس', 'المطرية', 'جسر السويس',
+        'حدائق الأهرام', 'الهرم ترسا', 'إمبابة', 'شبرا الخيمة',
+        'الإسكندرية - سموحة', 'الإسكندرية - ميامي', 'الإسكندرية - العجمي',
+        'طنطا', 'المنصورة', 'الزقازيق'
       ],
       openers: [],
       config: { shiftHours: 11 }
@@ -1795,75 +1796,166 @@
     }
 
     let audioCtx = null;
+
+    // Generate a high-clarity 16-bit PCM WAV Data URI chime for 100% universal browser fallback
+    function generateChimeWavUri() {
+      const sampleRate = 22050;
+      const duration = 0.45;
+      const numSamples = Math.floor(sampleRate * duration);
+      const buffer = new Uint8Array(44 + numSamples * 2);
+      
+      // WAV Header
+      const writeString = (offset, str) => {
+        for (let i = 0; i < str.length; i++) buffer[offset + i] = str.charCodeAt(i);
+      };
+      const writeUint32 = (offset, val) => {
+        buffer[offset] = val & 0xff;
+        buffer[offset + 1] = (val >> 8) & 0xff;
+        buffer[offset + 2] = (val >> 16) & 0xff;
+        buffer[offset + 3] = (val >> 24) & 0xff;
+      };
+      const writeUint16 = (offset, val) => {
+        buffer[offset] = val & 0xff;
+        buffer[offset + 1] = (val >> 8) & 0xff;
+      };
+
+      writeString(0, 'RIFF');
+      writeUint32(4, 36 + numSamples * 2);
+      writeString(8, 'WAVE');
+      writeString(12, 'fmt ');
+      writeUint32(16, 16);
+      writeUint16(20, 1); // PCM
+      writeUint16(22, 1); // Mono
+      writeUint32(24, sampleRate);
+      writeUint32(28, sampleRate * 2);
+      writeUint16(32, 2);
+      writeUint16(34, 16);
+      writeString(36, 'data');
+      writeUint32(40, numSamples * 2);
+
+      // Synthesize a loud 3-tone chime (587Hz -> 880Hz -> 1174Hz)
+      for (let i = 0; i < numSamples; i++) {
+        const t = i / sampleRate;
+        let freq = 587.33; // D5
+        if (t > 0.12) freq = 880.00; // A5
+        if (t > 0.25) freq = 1174.66; // D6
+        
+        const env = Math.max(0, 1 - (t % 0.14) / 0.14);
+        const sample = Math.sin(2 * Math.PI * freq * t) * env * 28000;
+        const intSample = Math.max(-32768, Math.min(32767, Math.floor(sample)));
+        const offset = 44 + i * 2;
+        buffer[offset] = intSample & 0xff;
+        buffer[offset + 1] = (intSample >> 8) & 0xff;
+      }
+
+      let binary = '';
+      for (let i = 0; i < buffer.length; i++) binary += String.fromCharCode(buffer[i]);
+      return 'data:audio/wav;base64,' + btoa(binary);
+    }
+
+    const fallbackChimeUri = generateChimeWavUri();
+    let fallbackAudioElement = null;
+    try {
+      fallbackAudioElement = new Audio(fallbackChimeUri);
+      fallbackAudioElement.volume = 1.0;
+    } catch(e) {}
+
     function getAudioContext() {
       if (!audioCtx) {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         if (AudioCtx) audioCtx = new AudioCtx();
       }
       if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
+        audioCtx.resume().catch(() => {});
       }
       return audioCtx;
     }
 
-    // Unlock audio context on any user touch/click across devices
-    ['click', 'touchstart', 'keydown'].forEach(evt => {
-      window.addEventListener(evt, () => {
-        try { getAudioContext(); } catch(e) {}
-      }, { passive: true });
+    // Proactively unlock AudioContext on ANY user interaction across Mobile and PC
+    function unlockAudio() {
+      try {
+        const ctx = getAudioContext();
+        if (ctx && ctx.state === 'suspended') ctx.resume();
+        if (fallbackAudioElement) {
+          fallbackAudioElement.play().then(() => {
+            fallbackAudioElement.pause();
+            fallbackAudioElement.currentTime = 0;
+          }).catch(() => {});
+        }
+      } catch(e) {}
+    }
+
+    ['click', 'touchstart', 'touchend', 'mousedown', 'keydown', 'pointerdown'].forEach(evt => {
+      document.addEventListener(evt, unlockAudio, { passive: true, capture: true });
     });
 
     function playLoudNotification(type = 'new_request') {
       if (!soundEnabled) return;
+
+      // 1. Primary engine: High-Volume Web Audio API Synthesis
       try {
         const ctx = getAudioContext();
-        if (!ctx) return;
+        if (ctx) {
+          if (ctx.state === 'suspended') ctx.resume();
 
-        if (type === 'new_request') {
-          // Clear, loud, penetrating 4-tone ascending noon chime: C5, E5, G5, C6
-          const freqs = [523.25, 659.25, 783.99, 1046.50];
-          const startT = ctx.currentTime;
-          freqs.forEach((freq, idx) => {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(freq, startT + idx * 0.11);
-            
-            gain.gain.setValueAtTime(0.001, startT + idx * 0.11);
-            gain.gain.linearRampToValueAtTime(0.95, startT + idx * 0.11 + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.001, startT + idx * 0.11 + 0.38);
+          if (type === 'new_request') {
+            // High-resonance 4-tone ascending noon alert
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            const startT = ctx.currentTime;
+            notes.forEach((freq, idx) => {
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              osc.type = 'triangle';
+              osc.frequency.setValueAtTime(freq, startT + idx * 0.10);
 
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start(startT + idx * 0.11);
-            osc.stop(startT + idx * 0.11 + 0.40);
-          });
-        } else if (type === 'alarm_overdue') {
-          // 3 loud pulsating siren bursts for 11h exceeded!
-          const startT = ctx.currentTime;
-          for (let i = 0; i < 3; i++) {
-            const offset = i * 0.28;
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(880, startT + offset);
-            osc.frequency.setValueAtTime(587, startT + offset + 0.13);
-            
-            gain.gain.setValueAtTime(0.95, startT + offset);
-            gain.gain.exponentialRampToValueAtTime(0.01, startT + offset + 0.25);
+              gain.gain.setValueAtTime(0.01, startT + idx * 0.10);
+              gain.gain.linearRampToValueAtTime(0.95, startT + idx * 0.10 + 0.02);
+              gain.gain.exponentialRampToValueAtTime(0.001, startT + idx * 0.10 + 0.35);
 
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start(startT + offset);
-            osc.stop(startT + offset + 0.26);
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              osc.start(startT + idx * 0.10);
+              osc.stop(startT + idx * 0.10 + 0.36);
+            });
+          } else if (type === 'alarm_overdue') {
+            // High urgency siren for 11h exceeded
+            const startT = ctx.currentTime;
+            for (let i = 0; i < 3; i++) {
+              const offset = i * 0.26;
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              osc.type = 'sawtooth';
+              osc.frequency.setValueAtTime(880, startT + offset);
+              osc.frequency.setValueAtTime(587, startT + offset + 0.12);
+
+              gain.gain.setValueAtTime(0.95, startT + offset);
+              gain.gain.exponentialRampToValueAtTime(0.01, startT + offset + 0.24);
+
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              osc.start(startT + offset);
+              osc.stop(startT + offset + 0.25);
+            }
           }
+          return;
         }
       } catch (err) {
-        console.warn('Audio alert error:', err);
+        console.warn('Web Audio error, trying fallback:', err);
       }
+
+      // 2. Secondary engine: Direct HTML5 Audio element fallback
+      try {
+        if (fallbackAudioElement) {
+          fallbackAudioElement.currentTime = 0;
+          fallbackAudioElement.play().catch(() => {});
+        } else {
+          const a = new Audio(fallbackChimeUri);
+          a.volume = 1.0;
+          a.play().catch(() => {});
+        }
+      } catch(e) {}
     }
 
-    // Backward compatibility
     function playBeep() {
       playLoudNotification('new_request');
     }
@@ -1916,15 +2008,6 @@
     };
 
     
-    $('btn-test-sound').onclick = () => {
-      try {
-        const ctx = getAudioContext();
-        if (ctx && ctx.state === 'suspended') ctx.resume();
-      } catch(e) {}
-      playLoudNotification('new_request');
-      showToast(currentLang === 'ar' ? '🔊 تم تجربة صوت الإشعار العالي بنجاح!' : '🔊 Loud audio test played!');
-    };
-
     $('btn-sound').onclick = () => {
       soundEnabled = !soundEnabled;
       localStorage.setItem('noon_sound', soundEnabled);
@@ -2290,6 +2373,11 @@
       }
 
       populateBranchSelects();
+      // Clean up any legacy mock openers from local cache
+      if (appData.openers && appData.openers.some(o => o.name === 'أحمد عادل' || o.name === 'محمد فتحي')) {
+        appData.openers = appData.openers.filter(o => o.name !== 'أحمد عادل' && o.name !== 'محمد فتحي' && o.name !== 'محمود حسن' && o.name !== 'كريم السيد');
+        persistLocal();
+      }
       const savedArchives = localStorage.getItem('noon_archived_requests');
       if (savedArchives) {
         try { appData.archived_requests = JSON.parse(savedArchives); } catch(e) {}
@@ -2302,7 +2390,8 @@
       await syncWithCloud();
 
       // Poll cloud every 6 seconds so all 30 branches stay updated in real time!
-      setInterval(syncWithCloud, 6000);
+      // Smart Sync: MQTT is push-driven (<1s). Periodic cloud background sync runs safely every 45s to avoid GitHub rate limits
+      setInterval(syncWithCloud, 45000);
     }
 
     function fallbackLocalMode() {
@@ -2312,7 +2401,24 @@
     }
 
     function persistLocal() {
-      localStorage.setItem('noon_hub_data', JSON.stringify(appData));
+      
+      try {
+        // Keep requests capped at latest 500 for localStorage, while all remain in memory & cloud
+        const toSave = {
+          ...appData,
+          requests: (appData.requests || []).slice(0, 500)
+        };
+        localStorage.setItem('noon_hub_data', JSON.stringify(toSave));
+      } catch (e) {
+        console.warn('LocalStorage quota reached, pruning old cache:', e);
+        try {
+          const minimal = {
+            ...appData,
+            requests: (appData.requests || []).slice(0, 150)
+          };
+          localStorage.setItem('noon_hub_data', JSON.stringify(minimal));
+        } catch(_) {}
+      }
     }
 
     function setupSSE() {
@@ -2467,7 +2573,9 @@
     const rememberedLA = localStorage.getItem('noon_last_la_name');
     if (rememberedLA) $('f_la_name').value = rememberedLA;
 
-    $('rider-form').onsubmit = async () => {
+    $('rider-form').onsubmit = (e) => {
+      if (e && e.preventDefault) e.preventDefault();
+
       const la_name = $('f_la_name').value.trim();
       const branch = $('f_branch').value;
       const rider_name = $('f_rider_name').value.trim();
@@ -2487,6 +2595,9 @@
         showToast(currentLang === 'ar' ? 'يرجى استكمال الحقول المطلوبة' : 'Please complete all required fields');
         return;
       }
+
+      // 🔊 1. IMMEDIATELY PLAY LOUD NOTIFICATION SOUND ON USER GESTURE!
+      playLoudNotification('new_request');
 
       localStorage.setItem('noon_last_la_name', la_name);
 
@@ -2509,28 +2620,29 @@
         updated: Date.now()
       };
 
-      const serverRes = await apiPost('/api/requests', newReq);
-      const finalReq = serverRes || newReq;
-
-      // Always add to local data and persist
-      if (!appData.requests.some(r => r.id === finalReq.id)) {
-        appData.requests.unshift(finalReq);
+      // ⚡ 2. INSTANT OPTIMISTIC LOCAL UPDATE (0 Milliseconds Delay!)
+      if (!appData.requests.some(r => r.id === newReq.id)) {
+        appData.requests.unshift(newReq);
       }
       persistLocal();
-      cloudCreateRequest(finalReq);
-      broadcastRealtimeRequest(finalReq);
 
       // Add to my submissions
-      mySubmissions.unshift(finalReq.id);
-      localStorage.setItem('noon_my_subs', JSON.stringify(mySubmissions.slice(0, 50)));
+      mySubmissions.unshift(newReq.id);
+      localStorage.setItem('noon_my_subs', JSON.stringify(mySubmissions.slice(0, 100)));
 
-      // Show confirmation
-      $('submitted-code').textContent = `REF: #${finalReq.id.slice(-5).toUpperCase()} (${rider_name})`;
+      // ⚡ 3. INSTANT UI FEEDBACK
+      $('submitted-code').textContent = `REF: #${newReq.id.slice(-5).toUpperCase()} (${rider_name})`;
       $('rider-form').style.display = 'none';
       $('submit-success-card').style.display = 'block';
 
-      showToast(currentLang === 'ar' ? '✅ تم إرسال الطلب بنجاح' : '✅ Request submitted successfully');
+      showToast(currentLang === 'ar' ? '✅ تم إرسال الطلب وتشغيل الإشعار فوراً' : '✅ Request submitted instantly');
       renderAll();
+
+      // ⚡ 4. NON-BLOCKING ASYNC CLOUD & WEBSOCKET BROADCAST
+      setTimeout(() => {
+        broadcastRealtimeRequest(newReq);
+        cloudCreateRequest(newReq);
+      }, 10);
     };
 
     $('btn-new-req').onclick = () => {
@@ -2565,14 +2677,7 @@
       const grid = $('team-openers-grid');
       if (!grid) return;
 
-      if (!appData.openers || !appData.openers.length) {
-        appData.openers = [
-          { id: 'op_1', name: 'أحمد عادل', status: 'online', branches: ['التجمع الخامس', 'الشروق', 'الرحاب', 'العبور'], shiftsOpened: 18 },
-          { id: 'op_2', name: 'محمد فتحي', status: 'online', branches: ['المعادي', 'حلوان', 'شبرا'], shiftsOpened: 24 },
-          { id: 'op_3', name: 'محمود حسن', status: 'online', branches: ['فيصل والهرم', 'الشيخ زايد', '6 أكتوبر', 'الدقي'], shiftsOpened: 15 },
-          { id: 'op_4', name: 'كريم السيد', status: 'online', branches: ['مدينة نصر', 'مصر الجديدة', 'المهندسين'], shiftsOpened: 21 }
-        ];
-      }
+      if (!appData.openers) appData.openers = [];
 
       // If current user is registered opener, sync
       if (currentOpenerName) {
@@ -2588,6 +2693,16 @@
         } else if (myAssignedBranches.length) {
           existing.branches = myAssignedBranches;
         }
+      }
+
+      if (!appData.openers || !appData.openers.length) {
+        grid.innerHTML = `
+          <div style="grid-column: 1 / -1; background: var(--bg); border: 1px dashed var(--card-border); padding: 14px; border-radius: var(--radius-sm); text-align: center;">
+            <span style="font-size: 13px; color: var(--text-muted);">👥 لم يتم تسجيل أي مشرفين في قائمة الفريق بعد. يمكنك تسجيل نفسك وفروعك بالضغط على <b>«تحديد فروعي»</b> أو <b>«إدارة الفريق»</b>.</span>
+          </div>
+        `;
+        updateActiveBranchBanner();
+        return;
       }
 
       const countEl = $('team-openers-count');
@@ -2703,8 +2818,30 @@
         return;
       }
 
-      listEl.innerHTML = filtered.map(r => renderRequestCard(r)).join('');
+      // 🚀 High-Performance Pagination for 30 Branches and 3,000+ Requests
+      let displayLimit = window._boardLimit || 40;
+      const totalFiltered = filtered.length;
+      const sliced = filtered.slice(0, displayLimit);
+
+      let cardsHtml = sliced.map(r => renderRequestCard(r)).join('');
+
+      if (totalFiltered > displayLimit) {
+        cardsHtml += `
+          <div style="text-align:center; margin: 20px 0;">
+            <button class="btn btn-outline" style="border-color:var(--noon-yellow); color:var(--text-main); font-weight:800; padding:12px 28px; font-size:14px; background:var(--card-bg);" onclick="loadMoreRequests()">
+              📥 عرض المزيد من الطلبات (معروض ${displayLimit} من إجمالي ${totalFiltered} طلب في الـ 30 فرع)
+            </button>
+          </div>
+        `;
+      }
+
+      listEl.innerHTML = cardsHtml;
     }
+
+    window.loadMoreRequests = function() {
+      window._boardLimit = (window._boardLimit || 40) + 40;
+      renderBoard();
+    };
 
     window.selectBoardBranch = function(b) {
       selectedBoardBranch = b;
