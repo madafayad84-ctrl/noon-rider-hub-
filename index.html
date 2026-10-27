@@ -795,6 +795,166 @@
       font-weight: 600;
     }
 
+
+    /* Live Branch Location & Operations Radar Map */
+    .live-map-card {
+      background: #0b1120;
+      border: 1px solid #1e293b;
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 20px;
+      color: #fff;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
+    }
+    .live-map-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 14px;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 12px;
+    }
+    .live-map-title {
+      font-size: 17px;
+      font-weight: 900;
+      color: var(--noon-yellow);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .live-map-stats {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .map-stat-chip {
+      background: #1e293b;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .map-stat-chip b {
+      color: var(--noon-yellow);
+      font-size: 14px;
+    }
+
+    /* SVG Interactive Geo Canvas */
+    .geo-radar-canvas {
+      width: 100%;
+      height: 380px;
+      background: radial-gradient(circle at 50% 50%, #172554 0%, #090d16 80%);
+      border-radius: var(--radius-md);
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #1e3a8a;
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.8);
+    }
+    .geo-radar-canvas svg {
+      width: 100%;
+      height: 100%;
+    }
+    .branch-pin {
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .branch-pin:hover {
+      transform: scale(1.22);
+    }
+    .radar-pulse-circle {
+      animation: radar-pulse 2s infinite ease-out;
+      transform-origin: center;
+    }
+    @keyframes radar-pulse {
+      0% { r: 6px; opacity: 1; stroke-width: 2px; }
+      100% { r: 24px; opacity: 0; stroke-width: 0.5px; }
+    }
+
+    /* Branch Fleet Live Cards Grid */
+    .branch-fleet-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .branch-fleet-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: all 0.2s;
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+    }
+    .branch-fleet-card:hover {
+      border-color: var(--noon-yellow);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    .branch-fleet-card.has-active {
+      border-left: 5px solid var(--success);
+    }
+    .branch-fleet-card.has-overdue {
+      border-left: 5px solid var(--danger);
+    }
+    .fleet-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .fleet-branch-name {
+      font-weight: 800;
+      font-size: 14px;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .fleet-riders-badge {
+      font-size: 12px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 12px;
+      background: rgba(22, 163, 74, 0.12);
+      color: var(--success);
+      border: 1px solid rgba(22, 163, 74, 0.3);
+    }
+    .fleet-riders-badge.empty {
+      background: var(--badge-bg);
+      color: var(--text-muted);
+      border-color: var(--card-border);
+      font-weight: 600;
+    }
+    .fleet-riders-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 6px;
+      background: var(--bg);
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+    }
+    .fleet-rider-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 3px 0;
+      border-bottom: 1px dashed var(--card-border);
+    }
+    .fleet-rider-row:last-child {
+      border-bottom: none;
+    }
+
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
 </head>
@@ -1200,6 +1360,70 @@
         <div class="kpi-card" style="border-right: 4px solid var(--primary);">
           <div class="kpi-val" id="kpi-avg-sla" style="color:var(--primary);">0.0 د</div>
           <div class="kpi-label" data-i18n="kpi_sla">متوسط سرعة استجابة الفتح</div>
+        </div>
+      </div>
+
+      
+      <!-- Live Operations Geo-Location Hub (خريطة لايف لوكيشن الفروع وتوزيع الطيارين) -->
+      <div class="live-map-card">
+        <div class="live-map-header">
+          <div>
+            <div class="live-map-title">
+              <span>📍 خريطة لايف لوكيشن الفروع وتوزيع الطيارين المباشر</span>
+              <span class="badge badge-noon" style="font-size:11px;">مباشر Live 30 Hubs</span>
+            </div>
+            <div style="font-size: 12px; color: #94a3b8; margin-top: 3px;">
+              متابعة حية وفورية لكافة الفروع الـ 30 في مصر وعدد الطيارين المفتوح لهم شيفت الآن في كل فرع
+            </div>
+          </div>
+          <div class="live-map-stats">
+            <div class="map-stat-chip">📍 الفروع المغطاة: <b>30 فرع</b></div>
+            <div class="map-stat-chip">🛵 إجمالي طياري الشيفت: <b id="map-total-riders">0</b></div>
+            <div class="map-stat-chip">⚡ فروع نشطة الآن: <b id="map-active-branches">0</b></div>
+          </div>
+        </div>
+
+        <!-- Interactive Radar Map of Egypt Hubs -->
+        <div class="geo-radar-canvas" id="geo-radar-canvas">
+          <svg viewBox="0 0 1000 480" id="egypt-radar-svg">
+            <!-- Grid Lines & Concentric Radar Circles -->
+            <defs>
+              <linearGradient id="gridGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#1e3a8a" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#0f172a" stop-opacity="0.1"/>
+              </linearGradient>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#gridGrad)" />
+            <circle cx="500" cy="240" r="100" fill="none" stroke="#1e3a8a" stroke-width="1" stroke-dasharray="4,4" opacity="0.4"/>
+            <circle cx="500" cy="240" r="200" fill="none" stroke="#1e3a8a" stroke-width="1" stroke-dasharray="6,6" opacity="0.3"/>
+            <circle cx="500" cy="240" r="320" fill="none" stroke="#1e3a8a" stroke-width="1" stroke-dasharray="8,8" opacity="0.2"/>
+            <line x1="500" y1="0" x2="500" y2="480" stroke="#1e3a8a" stroke-width="1" stroke-dasharray="5,5" opacity="0.25"/>
+            <line x1="0" y1="240" x2="1000" y2="240" stroke="#1e3a8a" stroke-width="1" stroke-dasharray="5,5" opacity="0.25"/>
+
+            <!-- Region Labels -->
+            <text x="500" y="30" fill="#94a3b8" font-size="12" font-weight="bold" text-anchor="middle">🌊 البحر المتوسط والإسكندرية</text>
+            <text x="500" y="465" fill="#94a3b8" font-size="12" font-weight="bold" text-anchor="middle">🏛️ قطاع القاهرة الكبرى والجيزة</text>
+
+            <!-- Dynamic Branch Pins Rendered by JS -->
+            <g id="radar-pins-group"></g>
+          </svg>
+        </div>
+
+        <!-- Zone Filter Pills -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; flex-wrap:wrap; gap:8px;">
+          <div style="display:flex; gap:6px; flex-wrap:wrap;" id="zone-filter-chips">
+            <button class="chip active" onclick="filterFleetZone('all')">📍 كل الفروع (30)</button>
+            <button class="chip" onclick="filterFleetZone('cairo')">🏙️ القاهرة الكبرى (14)</button>
+            <button class="chip" onclick="filterFleetZone('giza')">🏛️ الجيزة وغرب القاهرة (10)</button>
+            <button class="chip" onclick="filterFleetZone('alex')">🌊 الإسكندرية (3)</button>
+            <button class="chip" onclick="filterFleetZone('delta')">🌾 الدلتا والمحافظات (3)</button>
+          </div>
+          <input type="text" id="fleet-branch-search" class="form-control" style="max-width:240px; padding:6px 12px; font-size:13px;" placeholder="🔍 بحث عن فرع...">
+        </div>
+
+        <!-- Branch Fleet Grid (30 Branches with Live Rider Counts) -->
+        <div id="branch-fleet-grid" class="branch-fleet-grid">
+          <!-- Populated by JS -->
         </div>
       </div>
 
@@ -1749,6 +1973,15 @@
     /* =================================================================
        Application State & Storage
        ================================================================= */
+    
+    // Request notification permissions for background shift alerts
+    function requestPushNotificationPermission() {
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().catch(() => {});
+      }
+    }
+    ['click', 'touchstart'].forEach(e => document.addEventListener(e, requestPushNotificationPermission, { once: true, passive: true }));
+
     let currentLang = localStorage.getItem('noon_lang') || 'ar';
     let currentTheme = localStorage.getItem('noon_theme') || 'light';
     let soundEnabled = localStorage.getItem('noon_sound') !== 'false';
@@ -2209,9 +2442,24 @@
               if (!appData.requests.some(r => r.id === data.id)) {
                 appData.requests.unshift(data);
                 persistLocal();
-                playBeep();
                 renderAll();
-                showToast(currentLang === 'ar' ? ('⚡ وصول طلب فوري: ' + data.name + ' (' + data.branch + ')') : ('⚡ Live Request: ' + data.name));
+
+                // 🔔 Trigger sound and system push notification ONLY when a shift open request is received!
+                const isShiftOpen = data.rt === 'فتح شيفت' || !data.rt;
+                if (isShiftOpen) {
+                  playLoudNotification('new_request');
+
+                  // Browser Desktop / Mobile Push Notification
+                  if ('Notification' in window && Notification.permission === 'granted') {
+                    try {
+                      new Notification('⚡ طلب فتح شيفت جديد - نون', {
+                        body: `الطيار: ${data.name} (كود #${data.pid})\nالفرع: ${data.branch} | LA: ${data.la_name || '-'}`,
+                        icon: 'https://noon.com/favicon.ico'
+                      });
+                    } catch(e) {}
+                  }
+                }
+                showToast(currentLang === 'ar' ? ('⚡ وصول طلب فتح شيفت: ' + data.name + ' (' + data.branch + ')') : ('⚡ Shift Request: ' + data.name));
               }
             } else if (topic === MQTT_TOPIC_UPDATE) {
               const idx = appData.requests.findIndex(r => r.id === data.id);
@@ -2597,8 +2845,6 @@
       }
 
       // 🔊 1. IMMEDIATELY PLAY LOUD NOTIFICATION SOUND ON USER GESTURE!
-      playLoudNotification('new_request');
-
       localStorage.setItem('noon_last_la_name', la_name);
 
       const newReq = {
@@ -3314,7 +3560,205 @@
     /* =================================================================
        Executive Manager Hub (Dashboard & Analytics)
        ================================================================= */
+    
+    /* =================================================================
+       Live Branch Location & Operations Radar Map Logic (30 Hubs)
+       ================================================================= */
+    let selectedFleetZone = 'all';
+
+    const BRANCH_GEO_COORDS = {
+      // Alexandria (North-West)
+      'الإسكندرية - سموحة': { x: 320, y: 70, zone: 'alex' },
+      'الإسكندرية - ميامي': { x: 380, y: 55, zone: 'alex' },
+      'الإسكندرية - العجمي': { x: 260, y: 85, zone: 'alex' },
+
+      // Delta & Governorates (North-Central)
+      'طنطا': { x: 480, y: 130, zone: 'delta' },
+      'المنصورة': { x: 580, y: 110, zone: 'delta' },
+      'الزقازيق': { x: 630, y: 160, zone: 'delta' },
+
+      // Cairo & East Cairo
+      'التجمع الخامس': { x: 640, y: 320, zone: 'cairo' },
+      'الرحاب': { x: 670, y: 275, zone: 'cairo' },
+      'الشروق': { x: 740, y: 290, zone: 'cairo' },
+      'العبور': { x: 660, y: 215, zone: 'cairo' },
+      'مصر الجديدة': { x: 570, y: 250, zone: 'cairo' },
+      'مدينة نصر': { x: 590, y: 285, zone: 'cairo' },
+      'المعادي': { x: 530, y: 375, zone: 'cairo' },
+      'المقطم': { x: 550, y: 330, zone: 'cairo' },
+      'حلوان': { x: 540, y: 435, zone: 'cairo' },
+      'وسط البلد': { x: 495, y: 295, zone: 'cairo' },
+      'شبرا': { x: 490, y: 240, zone: 'cairo' },
+      'عين شمس': { x: 545, y: 220, zone: 'cairo' },
+      'المطرية': { x: 520, y: 200, zone: 'cairo' },
+      'جسر السويس': { x: 565, y: 210, zone: 'cairo' },
+
+      // Giza & West Cairo
+      'المهندسين': { x: 450, y: 290, zone: 'giza' },
+      'الدقي': { x: 460, y: 315, zone: 'giza' },
+      'الزمالك': { x: 475, y: 275, zone: 'giza' },
+      'فيصل والهرم': { x: 420, y: 345, zone: 'giza' },
+      'الهرم ترسا': { x: 410, y: 375, zone: 'giza' },
+      'حدائق الأهرام': { x: 370, y: 385, zone: 'giza' },
+      'إمبابة': { x: 460, y: 245, zone: 'giza' },
+      'شبرا الخيمة': { x: 480, y: 205, zone: 'giza' },
+      'الشيخ زايد': { x: 340, y: 325, zone: 'giza' },
+      '6 أكتوبر': { x: 305, y: 365, zone: 'giza' }
+    };
+
+    function renderLiveLocationMap() {
+      const pinsGroup = $('radar-pins-group');
+      const fleetGrid = $('branch-fleet-grid');
+      const search = ($('fleet-branch-search') ? $('fleet-branch-search').value : '').toLowerCase().trim();
+      if (!pinsGroup || !fleetGrid) return;
+
+      const activeShifts = (typeof getActiveShifts === 'function') ? getActiveShifts() : [];
+      const branches = appData.branches || [];
+
+      // Calculate branch metrics
+      const branchFleetMap = {};
+      let totalActiveRiders = 0;
+      let activeBranchesCount = 0;
+
+      branches.forEach(b => {
+        const shifts = activeShifts.filter(s => s.request.branch === b);
+        branchFleetMap[b] = shifts;
+        if (shifts.length > 0) {
+          totalActiveRiders += shifts.length;
+          activeBranchesCount++;
+        }
+      });
+
+      if ($('map-total-riders')) $('map-total-riders').textContent = totalActiveRiders;
+      if ($('map-active-branches')) $('map-active-branches').textContent = activeBranchesCount;
+
+      // 1. Render SVG Radar Pins
+      let pinsSvgHtml = '';
+      branches.forEach(b => {
+        const coords = BRANCH_GEO_COORDS[b] || { x: 500, y: 240, zone: 'cairo' };
+        if (selectedFleetZone !== 'all' && coords.zone !== selectedFleetZone) return;
+
+        const shifts = branchFleetMap[b] || [];
+        const count = shifts.length;
+        const hasActive = count > 0;
+        const hasOverdue = shifts.some(s => s.end < Date.now());
+
+        const pinColor = hasOverdue ? '#dc2626' : (hasActive ? '#16a34a' : '#475569');
+        const fillColor = hasOverdue ? '#ef4444' : (hasActive ? '#22c55e' : '#334155');
+
+        pinsSvgHtml += `
+          <g class="branch-pin" onclick="selectFleetBranch('${b}')" transform="translate(${coords.x}, ${coords.y})">
+            ${hasActive ? `<circle cx="0" cy="0" r="10" fill="none" stroke="${pinColor}" class="radar-pulse-circle" />` : ''}
+            <circle cx="0" cy="0" r="${hasActive ? 7 : 5}" fill="${fillColor}" stroke="#ffffff" stroke-width="1.5" />
+            <text x="0" y="-12" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle" style="text-shadow: 0 1px 4px #000;">
+              ${b} ${hasActive ? `(${count})` : ''}
+            </text>
+            ${hasActive ? `
+              <rect x="-14" y="8" width="28" height="14" rx="7" fill="var(--noon-yellow)" />
+              <text x="0" y="19" fill="#000" font-size="9" font-weight="900" text-anchor="middle">${count} 🛵</text>
+            ` : ''}
+          </g>
+        `;
+      });
+      pinsGroup.innerHTML = pinsSvgHtml;
+
+      // 2. Render Branch Fleet Cards Grid
+      let cardsHtml = '';
+      const filteredBranches = branches.filter(b => {
+        const coords = BRANCH_GEO_COORDS[b] || { zone: 'cairo' };
+        if (selectedFleetZone !== 'all' && coords.zone !== selectedFleetZone) return false;
+        if (search && !b.toLowerCase().includes(search)) return false;
+        return true;
+      });
+
+      // Sort: branches with active riders first
+      filteredBranches.sort((a, b) => {
+        const countA = (branchFleetMap[a] || []).length;
+        const countB = (branchFleetMap[b] || []).length;
+        return countB - countA;
+      });
+
+      if (!filteredBranches.length) {
+        fleetGrid.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;">
+          <h3>لا توجد فروع مطابقة للبحث</h3>
+        </div>`;
+        return;
+      }
+
+      cardsHtml = filteredBranches.map(b => {
+        const shifts = branchFleetMap[b] || [];
+        const count = shifts.length;
+        const hasActive = count > 0;
+        const hasOverdue = shifts.some(s => s.end < Date.now());
+
+        // Opener assigned
+        const assigned = (appData.openers || []).filter(o => o.branches && o.branches.includes(b)).map(o => o.name);
+        const openerName = assigned.length ? assigned.join('، ') : 'متاح لأي مشرف';
+
+        return `
+          <div class="branch-fleet-card ${hasOverdue ? 'has-overdue' : (hasActive ? 'has-active' : '')}" onclick="selectBoardBranch('${b}'); switchTab('tab-board');">
+            <div class="fleet-card-header">
+              <div class="fleet-branch-name">
+                <span>📍 ${b}</span>
+              </div>
+              <span class="fleet-riders-badge ${hasActive ? '' : 'empty'}">
+                ${hasActive ? `${count} طيار نشط 🛵` : 'لا يوجد طيارين'}
+              </span>
+            </div>
+
+            <div style="font-size:11px; color:var(--text-muted); display:flex; justify-content:space-between; margin:4px 0;">
+              <span>👤 المشرف: <b>${openerName}</b></span>
+              ${hasOverdue ? '<span style="color:var(--danger); font-weight:bold;">🚨 به متأخر</span>' : ''}
+            </div>
+
+            ${hasActive ? `
+              <div class="fleet-riders-list">
+                ${shifts.slice(0, 3).map(s => {
+                  const rem = s.end - Date.now();
+                  const isExp = rem <= 0;
+                  return `
+                    <div class="fleet-rider-row">
+                      <span>🛵 <b>${s.request.name}</b> (#${s.request.pid})</span>
+                      <span style="font-family:monospace; color:${isExp ? 'var(--danger)' : 'var(--success)'}; font-weight:bold;">
+                        ${isExp ? 'منتهي' : formatDurationExact(rem)}
+                      </span>
+                    </div>
+                  `;
+                }).join('')}
+                ${shifts.length > 3 ? `<div style="text-align:center; font-size:10px; color:var(--primary); font-weight:bold; margin-top:2px;">+ ${shifts.length - 3} طيارين آخرين بالفرع</div>` : ''}
+              </div>
+            ` : `
+              <div style="font-size:11px; color:var(--text-muted); text-align:center; padding:8px 0; background:var(--bg); border-radius:var(--radius-sm);">
+                ☕ الفرع هادئ حالياً ولا يوجد شيفتات مفتوحة
+              </div>
+            `}
+          </div>
+        `;
+      }).join('');
+
+      fleetGrid.innerHTML = cardsHtml;
+    }
+
+    window.filterFleetZone = function(zone) {
+      selectedFleetZone = zone;
+      $('#zone-filter-chips .chip').forEach(c => c.classList.remove('active'));
+      const activeBtn = event.currentTarget || event.target;
+      if (activeBtn) activeBtn.classList.add('active');
+      renderLiveLocationMap();
+    };
+
+    window.selectFleetBranch = function(branchName) {
+      if ($('fleet-branch-search')) $('fleet-branch-search').value = branchName;
+      renderLiveLocationMap();
+      showToast(`📍 تم تحديد فرع: ${branchName}`);
+    };
+
+    if ($('fleet-branch-search')) {
+      $('fleet-branch-search').oninput = renderLiveLocationMap;
+    }
+
     function renderManagerDashboard() {
+      renderLiveLocationMap();
       const now = new Date();
       $('mgr-current-date').textContent = now.toLocaleDateString(currentLang === 'ar' ? 'ar-EG' : 'en-US', {
         weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
