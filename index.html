@@ -672,7 +672,130 @@
       color: var(--text-muted);
     }
     .empty-icon { font-size: 40px; margin-bottom: 8px; }
-  </style>
+  
+    /* Live 11-Hour Countdown & Overdue Alarm Styling */
+    .live-countdown-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      background: rgba(22, 163, 74, 0.12);
+      border: 1px solid rgba(22, 163, 74, 0.4);
+      color: #16a34a;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: 'Cairo', monospace;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      transition: all 0.3s;
+    }
+    .live-countdown-badge.overdue {
+      background: rgba(220, 38, 38, 0.18);
+      border: 2px solid #dc2626;
+      color: #dc2626;
+      font-weight: 800;
+      animation: pulse-alarm 1s infinite alternate;
+    }
+    @keyframes pulse-alarm {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+      70% { transform: scale(1.02); box-shadow: 0 0 12px 4px rgba(220, 38, 38, 0.5); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+    }
+
+    /* Shift Schedule Window Box in Form */
+    .shift-schedule-box {
+      background: rgba(254, 238, 0, 0.08);
+      border: 2px solid var(--noon-yellow);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      margin-bottom: 16px;
+      transition: all 0.2s;
+    }
+    .shift-schedule-box .schedule-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .shift-schedule-box .schedule-title {
+      font-weight: 800;
+      color: var(--text-main);
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .preset-btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .preset-btn-group .chip.active {
+      background: var(--noon-yellow);
+      color: #000;
+      border-color: var(--noon-yellow);
+      font-weight: 800;
+    }
+
+    /* Team Openers Coverage Grid */
+    .team-openers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .opener-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .opener-card:hover {
+      border-color: var(--noon-yellow);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    .opener-card.active-opener {
+      border: 2px solid var(--noon-yellow);
+      background: rgba(254, 238, 0, 0.05);
+    }
+    .opener-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .opener-name {
+      font-weight: 800;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .opener-branches-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .opener-branch-pill {
+      font-size: 11px;
+      background: var(--badge-bg);
+      padding: 2px 7px;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+</style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
 </head>
 <body>
@@ -695,6 +818,11 @@
         <!-- Dark Mode Toggle -->
         <button id="btn-theme" class="icon-btn" title="تغيير المظهر | Toggle Theme">
           🌙
+        </button>
+        
+        <!-- Test Loud Alert Button -->
+        <button id="btn-test-sound" class="icon-btn" title="تجربة الصوت العالي | Test Loud Audio Alert" style="color:var(--noon-yellow); border-color:var(--noon-yellow); font-weight:700;">
+          🔊 <span>تجربة الصوت العالي</span>
         </button>
         <!-- Sound alert toggle -->
         <button id="btn-sound" class="icon-btn active" title="الصوت | Audio Alerts">
@@ -742,6 +870,10 @@
       </button>
       <button class="nav-btn" data-tab="tab-manager" id="nav-manager" style="display:none;">
         📊 <span data-i18n="nav_manager">لوحة المدير</span>
+      </button>
+    
+      <button class="nav-btn" id="btn-open-archive-modal" type="button" title="الأرشيف والسجل التاريخي">
+        📂 <span>الأرشيف</span>
       </button>
     </nav>
 
@@ -833,6 +965,42 @@
             </select>
           </div>
 
+          
+          <!-- Shift Time Range (من امتا لي امتا) -->
+          <div id="shift-window-box" class="shift-schedule-box">
+            <div class="schedule-header">
+              <div class="schedule-title">
+                🕒 <span data-i18n="lbl_shift_window">مواعيد ونطاق فتح الشيفت (من إمتى لإمتى)</span>
+              </div>
+              <span id="shift-duration-badge" class="badge badge-noon" style="font-size:12px; font-weight:800;">11 ساعة</span>
+            </div>
+            <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">
+              حدد وقت بداية ونهاية الوردية للطيار (نظام 11 ساعة للعد التنازلي التلقائي)
+            </div>
+
+            <div class="form-row">
+              <div class="form-group" style="margin-bottom:8px;">
+                <label for="f_shift_start" style="font-size:12px; color:var(--text-muted); font-weight:700;">
+                  ▶ <span data-i18n="lbl_shift_start">وقت بداية الشيفت</span>
+                </label>
+                <input type="time" id="f_shift_start" class="form-control" style="font-weight:bold; font-size:15px;">
+              </div>
+              <div class="form-group" style="margin-bottom:8px;">
+                <label for="f_shift_end" style="font-size:12px; color:var(--text-muted); font-weight:700;">
+                  ⏹ <span data-i18n="lbl_shift_end">وقت نهاية الشيفت (المستهدف)</span>
+                </label>
+                <input type="time" id="f_shift_end" class="form-control" style="font-weight:bold; font-size:15px;">
+              </div>
+            </div>
+
+            <div class="preset-btn-group">
+              <button type="button" class="chip active" id="chip-shift-11h" onclick="applyShiftPreset(11)">⚡ 11 ساعة نظامي</button>
+              <button type="button" class="chip" id="chip-shift-morning" onclick="applyShiftPreset('morning')">☀️ صباحية (08:00 - 19:00)</button>
+              <button type="button" class="chip" id="chip-shift-evening" onclick="applyShiftPreset('evening')">🌙 مسائية (12:00 - 23:00)</button>
+              <button type="button" class="chip" id="chip-shift-night" onclick="applyShiftPreset('night')">⏱️ سهرة (16:00 - 03:00)</button>
+            </div>
+          </div>
+
           <!-- Notes -->
           <div class="form-group">
             <label for="f_notes">
@@ -893,24 +1061,41 @@
     <!-- ==================== TAB 3: OPENER DISPATCH BOARD ==================== -->
     <section id="tab-board" style="display:none;">
       <!-- Opener Branch Assignment Toolbar -->
-      <div class="card" style="padding: 12px 16px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+      
+      <!-- Team Openers & Branch Distribution Panel -->
+      <div class="card" style="padding: 16px; margin-bottom: 12px; border-top: 4px solid var(--noon-yellow);">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
           <div>
-            <div style="font-size: 13px; color: var(--text-muted); font-weight: 700;">
-              👤 <span data-i18n="lbl_opener_name">المشرف الحالي</span>: <b id="current-opener-name" style="color:var(--text-main)">--</b>
+            <div style="font-size: 16px; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+              <span>👥 فريق فتح الشيفتات وتوزيع الفروع</span>
+              <span class="badge badge-done" id="team-openers-count">مشرفي الفروع</span>
             </div>
             <div style="font-size: 12px; color: var(--text-muted);">
-              📍 <span data-i18n="lbl_my_branches">فروعي المسندة</span>: <span id="my-branches-summary">--</span>
+              معرفة كل عضو في الفريق والمسؤول عن كل فرع لضمان السرعة ومنع التأخير
             </div>
           </div>
           <div style="display: flex; gap: 6px;">
             <button id="btn-edit-my-branches" class="btn btn-outline btn-sm">
-              ⚙️ <span data-i18n="btn_configure_branches">تحديد فروعي</span>
+              ⚙️ <span>تحديد فروعي</span>
+            </button>
+            <button id="btn-manage-team-modal" class="btn btn-outline btn-sm" style="border-color:var(--noon-yellow); color:var(--text-main);">
+              ➕ <span>إدارة الفريق</span>
             </button>
             <button id="btn-quick-open-modal" class="btn btn-noon btn-sm">
-              ➕ <span data-i18n="btn_direct_open">فتح مباشر</span>
+              ⚡ <span>فتح مباشر</span>
             </button>
           </div>
+        </div>
+
+        <!-- Team Openers Grid -->
+        <div id="team-openers-grid" class="team-openers-grid">
+          <!-- Dynamically populated with openers & their covered branches -->
+        </div>
+
+        <!-- Active Selected Branch Banner -->
+        <div id="active-branch-assigned-banner" style="margin-top: 12px; padding: 10px 14px; background: rgba(254, 238, 0, 0.1); border: 1px solid var(--noon-yellow); border-radius: var(--radius-sm); font-size: 13px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+          <span>📍 <b>الفرع المحدد حالياً:</b> <b id="banner-branch-name" style="color:var(--text-main)">كل الفروع</b></span>
+          <span>👤 <b>المشرف المسؤول:</b> <b id="banner-opener-name" style="color:var(--text-main)">فريق العمل المشترك</b></span>
         </div>
       </div>
 
@@ -1176,6 +1361,83 @@
       <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
         <button type="button" class="btn btn-outline close-modal" data-i18n="btn_cancel">إلغاء</button>
         <button type="button" id="btn-save-opener-branches" class="btn btn-noon" data-i18n="btn_save_branches">حفظ الفروع</button>
+      </div>
+    </div>
+  </div>
+
+  
+  <!-- Modal: Delete / Archive Confirmation -->
+  <div id="modal-delete-request" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-title">
+        <span>🗑️ <span>تأكيد حذف وأرشفة الطلب</span></span>
+        <button class="btn btn-outline btn-sm close-modal">✖</button>
+      </div>
+      <div style="margin-bottom: 14px;">
+        <p style="font-size: 14px; margin-bottom: 8px;">
+          هل تريد بالتأكيد حذف هذا الطلب من شاشة العمليات الحالية؟
+        </p>
+        <div id="delete-request-preview" style="background: var(--bg); padding: 12px; border-radius: var(--radius-sm); font-size: 13px; border: 1px solid var(--card-border); line-height:1.7;">
+          <!-- Rider info rendered by JS -->
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted); margin-top: 10px; background: rgba(2, 132, 199, 0.08); padding: 8px 12px; border-radius: var(--radius-sm);">
+          🔒 <b>حفظ دائم للأمان:</b> لن يتم مسح أي بيانات نهائياً! سينتقل الطلب فوراً إلى <b>الأرشيف السحابي الدائم</b> وسجل العمليات، ويمكنك مراجعته أو استرجاعه في أي وقت.
+        </div>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 8px;">
+        <button type="button" class="btn btn-outline close-modal">إلغاء</button>
+        <button type="button" id="btn-confirm-delete-req" class="btn btn-danger">🗑️ تأكيد الحذف والأرشفة</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Archive & History Viewer -->
+  <div id="modal-archive-viewer" class="modal-overlay hidden">
+    <div class="modal-box" style="max-width: 780px;">
+      <div class="modal-title">
+        <span>📂 <span>الأرشيف والسجل التاريخي للعمليات المحفوظة</span></span>
+        <button class="btn btn-outline btn-sm close-modal">✖</button>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px; flex-wrap:wrap;">
+        <input type="text" id="archive-search" class="form-control" style="flex:1; min-width:200px;" placeholder="🔍 بحث في الأرشيف باسم الطيار، كود ID، الفرع، أو الـ LA...">
+        <div style="display:flex; gap:6px;">
+          <button type="button" id="btn-export-archive-csv" class="btn btn-outline btn-sm">📥 تصدير CSV / Excel</button>
+          <button type="button" id="btn-clear-archive-view" class="btn btn-outline btn-sm close-modal">إغلاق</button>
+        </div>
+      </div>
+      <div id="archive-requests-list" style="max-height: 440px; overflow-y: auto;">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Manage Team Openers -->
+  <div id="modal-manage-team" class="modal-overlay hidden">
+    <div class="modal-box" style="max-width: 600px;">
+      <div class="modal-title">
+        <span>👥 <span>إدارة فريق فتح الشيفتات وتوزيع الفروع</span></span>
+        <button class="btn btn-outline btn-sm close-modal">✖</button>
+      </div>
+      <form id="form-add-team-member" onsubmit="return false;" style="margin-bottom:16px; background:var(--bg); padding:12px; border-radius:var(--radius-sm);">
+        <div style="font-weight:700; font-size:13px; margin-bottom:8px;">➕ إضافة مشرف جديد للفريق:</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label style="font-size:12px;">اسم المشرف</label>
+            <input type="text" id="new-opener-name" class="form-control" placeholder="مثال: حسام علي..." required>
+          </div>
+          <div class="form-group">
+            <label style="font-size:12px;">الفرع الأساسي</label>
+            <select id="new-opener-branch" class="form-control"></select>
+          </div>
+        </div>
+        <button type="button" id="btn-save-new-team-member" class="btn btn-noon btn-sm" style="margin-top:4px;">إضافة المشرف للفريق</button>
+      </form>
+      <div style="font-weight:700; font-size:13px; margin-bottom:8px;">فريق العمل الحالي:</div>
+      <div id="manage-team-list" style="max-height:250px; overflow-y:auto;">
+        <!-- List of team openers with delete/edit -->
+      </div>
+      <div style="display:flex; justify-content:flex-end; margin-top:14px;">
+        <button type="button" class="btn btn-outline close-modal">إغلاق</button>
       </div>
     </div>
   </div>
@@ -1532,21 +1794,78 @@
       }, 3500);
     }
 
-    function playBeep() {
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) audioCtx = new AudioCtx();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    // Unlock audio context on any user touch/click across devices
+    ['click', 'touchstart', 'keydown'].forEach(evt => {
+      window.addEventListener(evt, () => {
+        try { getAudioContext(); } catch(e) {}
+      }, { passive: true });
+    });
+
+    function playLoudNotification(type = 'new_request') {
       if (!soundEnabled) return;
       try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.25);
-        gain.gain.setValueAtTime(0.2, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.26);
-      } catch (e) {}
+        const ctx = getAudioContext();
+        if (!ctx) return;
+
+        if (type === 'new_request') {
+          // Clear, loud, penetrating 4-tone ascending noon chime: C5, E5, G5, C6
+          const freqs = [523.25, 659.25, 783.99, 1046.50];
+          const startT = ctx.currentTime;
+          freqs.forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, startT + idx * 0.11);
+            
+            gain.gain.setValueAtTime(0.001, startT + idx * 0.11);
+            gain.gain.linearRampToValueAtTime(0.95, startT + idx * 0.11 + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, startT + idx * 0.11 + 0.38);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(startT + idx * 0.11);
+            osc.stop(startT + idx * 0.11 + 0.40);
+          });
+        } else if (type === 'alarm_overdue') {
+          // 3 loud pulsating siren bursts for 11h exceeded!
+          const startT = ctx.currentTime;
+          for (let i = 0; i < 3; i++) {
+            const offset = i * 0.28;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(880, startT + offset);
+            osc.frequency.setValueAtTime(587, startT + offset + 0.13);
+            
+            gain.gain.setValueAtTime(0.95, startT + offset);
+            gain.gain.exponentialRampToValueAtTime(0.01, startT + offset + 0.25);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(startT + offset);
+            osc.stop(startT + offset + 0.26);
+          }
+        }
+      } catch (err) {
+        console.warn('Audio alert error:', err);
+      }
+    }
+
+    // Backward compatibility
+    function playBeep() {
+      playLoudNotification('new_request');
     }
 
     /* =================================================================
@@ -1594,6 +1913,16 @@
     }
     $('btn-theme').onclick = () => {
       setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+    };
+
+    
+    $('btn-test-sound').onclick = () => {
+      try {
+        const ctx = getAudioContext();
+        if (ctx && ctx.state === 'suspended') ctx.resume();
+      } catch(e) {}
+      playLoudNotification('new_request');
+      showToast(currentLang === 'ar' ? '🔊 تم تجربة صوت الإشعار العالي بنجاح!' : '🔊 Loud audio test played!');
     };
 
     $('btn-sound').onclick = () => {
@@ -1770,6 +2099,7 @@
         // Real-Time High-Speed WebSocket Mesh (Instant sub-second delivery between all branches)
     const MQTT_TOPIC_REQ = 'noon/ops/mada84/requests';
     const MQTT_TOPIC_UPDATE = 'noon/ops/mada84/updates';
+    const MQTT_TOPIC_DELETE = 'noon/ops/mada84/deletes';
     let mqttClient = null;
 
     function initRealtimeWebSocket() {
@@ -1786,7 +2116,7 @@
           console.log('⚡ Realtime WebSocket Connected!');
           $('sync-dot').className = 'dot live';
           $('sync-text').textContent = currentLang === 'ar' ? '🟢 متصل بالسحابة والشبكة الفورية (<1 ثانية)' : '🟢 Connected to Cloud & Live Mesh (<1s)';
-          mqttClient.subscribe([MQTT_TOPIC_REQ, MQTT_TOPIC_UPDATE]);
+          mqttClient.subscribe([MQTT_TOPIC_REQ, MQTT_TOPIC_UPDATE, MQTT_TOPIC_DELETE]);
         });
 
         mqttClient.on('message', (topic, payload) => {
@@ -1804,6 +2134,13 @@
               const idx = appData.requests.findIndex(r => r.id === data.id);
               if (idx !== -1) {
                 Object.assign(appData.requests[idx], data.updates);
+                persistLocal();
+                renderAll();
+              }
+            } else if (topic === MQTT_TOPIC_DELETE) {
+              const delIdx = appData.requests.findIndex(r => r.id === data.id);
+              if (delIdx !== -1) {
+                appData.requests.splice(delIdx, 1);
                 persistLocal();
                 renderAll();
               }
@@ -1953,6 +2290,11 @@
       }
 
       populateBranchSelects();
+      const savedArchives = localStorage.getItem('noon_archived_requests');
+      if (savedArchives) {
+        try { appData.archived_requests = JSON.parse(savedArchives); } catch(e) {}
+      }
+      applyShiftPreset(11);
       renderAll();
 
       // Immediately synchronize with centralized Cloud database
@@ -2047,6 +2389,63 @@
     /* =================================================================
        Branch Dropdown Population
        ================================================================= */
+    
+    /* =================================================================
+       Shift Presets & Duration Calculation (من إمتى لإمتى)
+       ================================================================= */
+    function formatDurationExact(ms) {
+      const totalSec = Math.max(0, Math.floor(ms / 1000));
+      const h = Math.floor(totalSec / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      const s = totalSec % 60;
+      const pad = n => String(n).padStart(2, '0');
+      return `${pad(h)}:${pad(m)}:${pad(s)}`;
+    }
+
+    window.applyShiftPreset = function(mode) {
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      const fmt = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
+      let startStr = '';
+      let endStr = '';
+
+      if (mode === 11) {
+        startStr = fmt(now);
+        const endD = new Date(now.getTime() + 11 * 3600 * 1000);
+        endStr = fmt(endD);
+      } else if (mode === 'morning') {
+        startStr = '08:00';
+        endStr = '19:00';
+      } else if (mode === 'evening') {
+        startStr = '12:00';
+        endStr = '23:00';
+      } else if (mode === 'night') {
+        startStr = '16:00';
+        endStr = '03:00';
+      }
+
+      if ($('f_shift_start')) $('f_shift_start').value = startStr;
+      if ($('f_shift_end')) $('f_shift_end').value = endStr;
+      if ($('shift-duration-badge')) $('shift-duration-badge').textContent = '11 ساعة';
+
+      $('.preset-btn-group .chip').forEach(c => c.classList.remove('active'));
+      if (mode === 11 && $('chip-shift-11h')) $('chip-shift-11h').classList.add('active');
+      if (mode === 'morning' && $('chip-shift-morning')) $('chip-shift-morning').classList.add('active');
+      if (mode === 'evening' && $('chip-shift-evening')) $('chip-shift-evening').classList.add('active');
+      if (mode === 'night' && $('chip-shift-night')) $('chip-shift-night').classList.add('active');
+    };
+
+    // Toggle shift window box visibility based on request type
+    if ($('f_req_type')) {
+      $('f_req_type').addEventListener('change', () => {
+        const isShift = $('f_req_type').value.includes('شيفت');
+        if ($('shift-window-box')) {
+          $('shift-window-box').style.display = isShift ? 'block' : 'none';
+        }
+      });
+    }
+
     function populateBranchSelects() {
       const branches = appData.branches || [];
       const opts = branches.map(b => `<option value="${b}">${b}</option>`).join('');
@@ -2079,6 +2478,11 @@
       const notes = $('f_notes').value.trim();
       const urg = $('f_urgent').checked;
 
+      // Shift window inputs (من امتا لي امتا)
+      const shift_start = $('f_shift_start') ? $('f_shift_start').value : '';
+      const shift_end = $('f_shift_end') ? $('f_shift_end').value : '';
+      const shift_window = (shift_start && shift_end) ? `من ${shift_start} إلى ${shift_end} (11 ساعة)` : '11 ساعة نظامي';
+
       if (!la_name || !branch || !rider_name || !rider_id) {
         showToast(currentLang === 'ar' ? 'يرجى استكمال الحقول المطلوبة' : 'Please complete all required fields');
         return;
@@ -2095,6 +2499,9 @@
         la_name,
         office,
         rt,
+        shift_start,
+        shift_end,
+        shift_window,
         notes,
         urg,
         status: 'new',
@@ -2150,7 +2557,95 @@
     /* =================================================================
        Board Rendering & Actions (Opener View)
        ================================================================= */
+    
+    /* =================================================================
+       Team Openers Coverage & Distribution Logic
+       ================================================================= */
+    function renderTeamOpenersGrid() {
+      const grid = $('team-openers-grid');
+      if (!grid) return;
+
+      if (!appData.openers || !appData.openers.length) {
+        appData.openers = [
+          { id: 'op_1', name: 'أحمد عادل', status: 'online', branches: ['التجمع الخامس', 'الشروق', 'الرحاب', 'العبور'], shiftsOpened: 18 },
+          { id: 'op_2', name: 'محمد فتحي', status: 'online', branches: ['المعادي', 'حلوان', 'شبرا'], shiftsOpened: 24 },
+          { id: 'op_3', name: 'محمود حسن', status: 'online', branches: ['فيصل والهرم', 'الشيخ زايد', '6 أكتوبر', 'الدقي'], shiftsOpened: 15 },
+          { id: 'op_4', name: 'كريم السيد', status: 'online', branches: ['مدينة نصر', 'مصر الجديدة', 'المهندسين'], shiftsOpened: 21 }
+        ];
+      }
+
+      // If current user is registered opener, sync
+      if (currentOpenerName) {
+        let existing = appData.openers.find(o => o.name === currentOpenerName);
+        if (!existing) {
+          appData.openers.unshift({
+            id: 'op_' + Date.now().toString(36),
+            name: currentOpenerName,
+            status: 'online',
+            branches: myAssignedBranches.length ? myAssignedBranches : ['كل الفروع'],
+            shiftsOpened: 0
+          });
+        } else if (myAssignedBranches.length) {
+          existing.branches = myAssignedBranches;
+        }
+      }
+
+      const countEl = $('team-openers-count');
+      if (countEl) countEl.textContent = `${appData.openers.length} مشرفين نشطين`;
+
+      grid.innerHTML = appData.openers.map(op => {
+        const isMe = op.name === currentOpenerName;
+        const isSelected = selectedBoardBranch && (op.branches || []).includes(selectedBoardBranch);
+        return `
+          <div class="opener-card ${isMe || isSelected ? 'active-opener' : ''}" onclick="filterBoardByOpener('${op.name}')">
+            <div class="opener-card-header">
+              <div class="opener-name">
+                <span>👤 ${op.name}</span>
+                ${isMe ? `<span class="badge badge-noon" style="font-size:10px;">أنت</span>` : ''}
+              </div>
+              <span class="badge badge-done" style="font-size:11px;">🟢 متواجد الآن</span>
+            </div>
+            <div class="opener-branches-list">
+              ${(op.branches || []).map(b => `<span class="opener-branch-pill">${b}</span>`).join('')}
+            </div>
+            <div style="font-size:11px; color:var(--text-muted); display:flex; justify-content:space-between; margin-top:6px; border-top:1px dashed var(--card-border); padding-top:4px;">
+              <span>⚡ شيفتات اليوم: <b>${op.shiftsOpened || 0}</b></span>
+              <span style="color:var(--primary); font-weight:bold;">عرض فروعه ←</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      updateActiveBranchBanner();
+    }
+
+    window.filterBoardByOpener = function(openerName) {
+      const op = appData.openers.find(o => o.name === openerName);
+      if (!op || !op.branches || !op.branches.length) {
+        selectBoardBranch('');
+        return;
+      }
+      selectBoardBranch(op.branches[0]);
+      showToast(currentLang === 'ar' ? `تصفية اللوحة لفروع المشرف: ${openerName}` : `Filtered for: ${openerName}`);
+    };
+
+    function updateActiveBranchBanner() {
+      const branchNameEl = $('banner-branch-name');
+      const openerNameEl = $('banner-opener-name');
+      if (!branchNameEl || !openerNameEl) return;
+
+      if (!selectedBoardBranch) {
+        branchNameEl.textContent = currentLang === 'ar' ? 'كل الفروع' : 'All Hubs';
+        openerNameEl.textContent = currentLang === 'ar' ? 'فريق العمل بالكامل' : 'All Team Members';
+      } else {
+        branchNameEl.textContent = selectedBoardBranch;
+        const responsible = appData.openers.filter(o => o.branches && o.branches.includes(selectedBoardBranch)).map(o => o.name);
+        openerNameEl.textContent = responsible.length ? responsible.join('، ') : (currentLang === 'ar' ? 'متاح لأي مشرف' : 'Any Dispatcher');
+      }
+    }
+
     function renderBoard() {
+      renderTeamOpenersGrid();
       const listEl = $('board-requests-list');
       const chipsEl = $('board-branch-chips');
       const search = $('board-search').value.toLowerCase().trim();
@@ -2229,13 +2724,31 @@
       const phoneHtml = r.phone ? `
         <a href="tel:${r.phone}" class="btn btn-outline btn-sm" title="اتصال بالطيار">📞 ${r.phone}</a>
         <a href="https://wa.me/20${r.phone.replace(/^0+/, '')}" target="_blank" class="btn btn-outline btn-sm" style="color:#25d366" title="محادثة واتساب">💬 WhatsApp</a>
-      ` : `<span style="font-size:12px; color:var(--text-muted)">${currentLang === 'ar' ? 'لا يوجد رقم هاتف' : 'No phone'}</span>`;
+      ` : `<span style="font-size:12px; color:var(--text-muted)">${currentLang === 'ar' ? 'لا يوجد هاتف' : 'No phone'}</span>`;
 
       // Status Badge
       let statusBadge = `<span class="badge badge-new">${t.status_new_lbl}</span>`;
       if (isDone) statusBadge = `<span class="badge badge-done">${t.status_done_lbl}</span>`;
       if (isRejected) statusBadge = `<span class="badge badge-rejected">${t.status_rejected_lbl}</span>`;
       if (isUrgent) statusBadge = `<span class="badge badge-urgent">🚨 ${currentLang === 'ar' ? 'عاجل' : 'Urgent'}</span> ` + statusBadge;
+
+      // 11-Hour Live Countdown Calculation
+      let countdownHtml = '';
+      if (isDone && (r.rt === 'فتح شيفت' || !r.rt)) {
+        const startTs = r.updated || r.ts;
+        const endTs = startTs + (11 * 3600 * 1000);
+        const remainingMs = endTs - Date.now();
+        const isOverdue = remainingMs <= 0;
+
+        countdownHtml = `
+          <div class="live-countdown-badge ${isOverdue ? 'overdue' : ''}" data-expire-ts="${endTs}">
+            ${isOverdue 
+              ? `🚨 <b>انتهت الـ 11 ساعة! متأخر منذ: <span class="cd-val">${formatDurationExact(-remainingMs)}</span></b>` 
+              : `⏱️ <b>باقي من الـ 11 ساعة: <span class="cd-val">${formatDurationExact(remainingMs)}</span></b>`
+            }
+          </div>
+        `;
+      }
 
       // Action Buttons
       let actionButtons = '';
@@ -2257,7 +2770,10 @@
               <span class="rider-name">${r.name}</span>
               <span class="rider-id">#${r.pid}</span>
             </div>
-            <div>${statusBadge}</div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              ${countdownHtml}
+              ${statusBadge}
+            </div>
           </div>
 
           <div class="req-meta-grid">
@@ -2265,6 +2781,7 @@
             <div class="meta-item">🏢 <b>${r.office || 'نون'}</b></div>
             <div class="meta-item">⚡ <b>${r.rt}</b></div>
             <div class="meta-item">🕒 <b>${timeAgo}</b></div>
+            ${r.shift_window ? `<div class="meta-item" style="color:var(--primary)">🕒 نطاق الشيفت: <b>${r.shift_window}</b></div>` : ''}
             <div class="meta-item" style="grid-column: 1 / -1; color: var(--primary);">
               👤 <b>${t.la_badge_prefix}</b> <span>${r.la_name || (currentLang === 'ar' ? 'مشرف غير مسجل' : 'N/A')}</span>
             </div>
@@ -2276,6 +2793,7 @@
           <div class="req-actions">
             <button class="btn btn-outline btn-sm" onclick="copyToClipboard('${r.pid}', '${currentLang === 'ar' ? 'تم نسخ كود الطيار' : 'Rider ID Copied'}')">📋 ID</button>
             ${phoneHtml}
+            <button class="btn btn-outline btn-sm" style="color:var(--danger); border-color:var(--danger);" onclick="promptDeleteRequest('${r.id}')" title="حذف من الشاشة وأرشفة">🗑️ حذف</button>
             <div style="flex:1;"></div>
             ${actionButtons}
           </div>
@@ -3078,6 +3596,31 @@
     setInterval(() => {
       renderShifts();
     }, 10000);
+
+    // Live high-speed 1-second ticker for 11h countdown & overdue alarms (0 lag)
+    setInterval(() => {
+      const now = Date.now();
+      let hasOverdue = false;
+
+      document.querySelectorAll('.live-countdown-badge').forEach(el => {
+        const expireTs = parseInt(el.getAttribute('data-expire-ts'), 10);
+        if (!expireTs) return;
+        const diff = expireTs - now;
+        const cdValEl = el.querySelector('.cd-val');
+        if (diff <= 0) {
+          hasOverdue = true;
+          if (!el.classList.contains('overdue')) {
+            el.classList.add('overdue');
+            playLoudNotification('alarm_overdue');
+          }
+          el.innerHTML = `🚨 <b>انتهت الـ 11 ساعة! متأخر منذ: <span class="cd-val">${formatDurationExact(-diff)}</span></b>`;
+        } else {
+          el.classList.remove('overdue');
+          if (cdValEl) cdValEl.textContent = formatDurationExact(diff);
+        }
+      });
+    }, 1000);
+
 
     // Initial boot
     setTheme(currentTheme);
