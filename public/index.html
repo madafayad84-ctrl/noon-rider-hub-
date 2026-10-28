@@ -1364,64 +1364,37 @@
       </div>
 
       
-      <!-- Live Operations Geo-Location Hub (خريطة لايف لوكيشن الفروع وتوزيع الطيارين) -->
-      <div class="live-map-card">
-        <div class="live-map-header">
+      <!-- Manager Live Branch Fleet Cards (كروت الفروع الحية وعدد الطيارين) -->
+      <div class="card" style="margin-bottom: 20px; border-top: 4px solid var(--noon-yellow);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; border-bottom: 1px solid var(--card-border); padding-bottom: 12px;">
           <div>
-            <div class="live-map-title">
-              <span>📍 خريطة لايف لوكيشن الفروع وتوزيع الطيارين المباشر</span>
-              <span class="badge badge-noon" style="font-size:11px;">مباشر Live 30 Hubs</span>
+            <div style="font-size: 18px; font-weight: 900; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+              <span>🏢 فروع نون والطيارين النشطين (Live Fleet Cards)</span>
+              <span class="badge badge-noon" id="map-total-branches-badge">0 فرع</span>
             </div>
-            <div style="font-size: 12px; color: #94a3b8; margin-top: 3px;">
-              متابعة حية وفورية لكافة الفروع الـ 30 في مصر وعدد الطيارين المفتوح لهم شيفت الآن في كل فرع
+            <div style="font-size: 13px; color: var(--text-muted); margin-top: 3px;">
+              متابعة مباشرة لعدد الطيارين المفتوح لهم شيفت الآن في كل فرع مع إمكانية إضافة وإدارة الفروع بسهولة
             </div>
           </div>
-          <div class="live-map-stats">
-            <div class="map-stat-chip">📍 الفروع المغطاة: <b>30 فرع</b></div>
-            <div class="map-stat-chip">🛵 إجمالي طياري الشيفت: <b id="map-total-riders">0</b></div>
-            <div class="map-stat-chip">⚡ فروع نشطة الآن: <b id="map-active-branches">0</b></div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <div style="background: var(--bg); border: 1px solid var(--card-border); padding: 5px 12px; border-radius: 20px; font-size: 13px; font-weight: 700;">
+              🛵 إجمالي الطيارين على الشيفت الآن: <b id="map-total-riders" style="color: var(--success); font-size: 15px;">0</b>
+            </div>
+            <button type="button" class="btn btn-noon btn-sm" onclick="promptAddBranchModal()">
+              ➕ إضافة فرع جديد
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="$('btn-manage-branches-modal').click()">
+              ⚙️ إدارة الفروع
+            </button>
           </div>
         </div>
 
-        <!-- Interactive Radar Map of Egypt Hubs -->
-        <div class="geo-radar-canvas" id="geo-radar-canvas">
-          <svg viewBox="0 0 1000 480" id="egypt-radar-svg">
-            <!-- Grid Lines & Concentric Radar Circles -->
-            <defs>
-              <linearGradient id="gridGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#1e3a8a" stop-opacity="0.3"/>
-                <stop offset="100%" stop-color="#0f172a" stop-opacity="0.1"/>
-              </linearGradient>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#gridGrad)" />
-            <circle cx="500" cy="240" r="100" fill="none" stroke="#1e3a8a" stroke-width="1" stroke-dasharray="4,4" opacity="0.4"/>
-            <circle cx="500" cy="240" r="200" fill="none" stroke="#1e3a8a" stroke-width="1" stroke-dasharray="6,6" opacity="0.3"/>
-            <circle cx="500" cy="240" r="320" fill="none" stroke="#1e3a8a" stroke-width="1" stroke-dasharray="8,8" opacity="0.2"/>
-            <line x1="500" y1="0" x2="500" y2="480" stroke="#1e3a8a" stroke-width="1" stroke-dasharray="5,5" opacity="0.25"/>
-            <line x1="0" y1="240" x2="1000" y2="240" stroke="#1e3a8a" stroke-width="1" stroke-dasharray="5,5" opacity="0.25"/>
-
-            <!-- Region Labels -->
-            <text x="500" y="30" fill="#94a3b8" font-size="12" font-weight="bold" text-anchor="middle">🌊 البحر المتوسط والإسكندرية</text>
-            <text x="500" y="465" fill="#94a3b8" font-size="12" font-weight="bold" text-anchor="middle">🏛️ قطاع القاهرة الكبرى والجيزة</text>
-
-            <!-- Dynamic Branch Pins Rendered by JS -->
-            <g id="radar-pins-group"></g>
-          </svg>
+        <!-- Search Bar for Branches -->
+        <div style="margin-bottom: 14px;">
+          <input type="text" id="fleet-branch-search" class="form-control" placeholder="🔍 بحث فوري باسم الفرع أو الطيار...">
         </div>
 
-        <!-- Zone Filter Pills -->
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; flex-wrap:wrap; gap:8px;">
-          <div style="display:flex; gap:6px; flex-wrap:wrap;" id="zone-filter-chips">
-            <button class="chip active" onclick="filterFleetZone('all')">📍 كل الفروع (30)</button>
-            <button class="chip" onclick="filterFleetZone('cairo')">🏙️ القاهرة الكبرى (14)</button>
-            <button class="chip" onclick="filterFleetZone('giza')">🏛️ الجيزة وغرب القاهرة (10)</button>
-            <button class="chip" onclick="filterFleetZone('alex')">🌊 الإسكندرية (3)</button>
-            <button class="chip" onclick="filterFleetZone('delta')">🌾 الدلتا والمحافظات (3)</button>
-          </div>
-          <input type="text" id="fleet-branch-search" class="form-control" style="max-width:240px; padding:6px 12px; font-size:13px;" placeholder="🔍 بحث عن فرع...">
-        </div>
-
-        <!-- Branch Fleet Grid (30 Branches with Live Rider Counts) -->
+        <!-- Branch Fleet Grid (User-managed Branch Cards with Live Rider Counts) -->
         <div id="branch-fleet-grid" class="branch-fleet-grid">
           <!-- Populated by JS -->
         </div>
@@ -2104,93 +2077,16 @@
       return audioCtx;
     }
 
-    // Proactively unlock AudioContext on ANY user interaction across Mobile and PC
-    function unlockAudio() {
-      try {
-        const ctx = getAudioContext();
-        if (ctx && ctx.state === 'suspended') ctx.resume();
-        if (fallbackAudioElement) {
-          fallbackAudioElement.play().then(() => {
-            fallbackAudioElement.pause();
-            fallbackAudioElement.currentTime = 0;
-          }).catch(() => {});
-        }
-      } catch(e) {}
-    }
-
-    ['click', 'touchstart', 'touchend', 'mousedown', 'keydown', 'pointerdown'].forEach(evt => {
-      document.addEventListener(evt, unlockAudio, { passive: true, capture: true });
-    });
+    // Audio unlock disabled - audio muted
 
     function playLoudNotification(type = 'new_request') {
-      if (!soundEnabled) return;
-
-      // 1. Primary engine: High-Volume Web Audio API Synthesis
-      try {
-        const ctx = getAudioContext();
-        if (ctx) {
-          if (ctx.state === 'suspended') ctx.resume();
-
-          if (type === 'new_request') {
-            // High-resonance 4-tone ascending noon alert
-            const notes = [523.25, 659.25, 783.99, 1046.50];
-            const startT = ctx.currentTime;
-            notes.forEach((freq, idx) => {
-              const osc = ctx.createOscillator();
-              const gain = ctx.createGain();
-              osc.type = 'triangle';
-              osc.frequency.setValueAtTime(freq, startT + idx * 0.10);
-
-              gain.gain.setValueAtTime(0.01, startT + idx * 0.10);
-              gain.gain.linearRampToValueAtTime(0.95, startT + idx * 0.10 + 0.02);
-              gain.gain.exponentialRampToValueAtTime(0.001, startT + idx * 0.10 + 0.35);
-
-              osc.connect(gain);
-              gain.connect(ctx.destination);
-              osc.start(startT + idx * 0.10);
-              osc.stop(startT + idx * 0.10 + 0.36);
-            });
-          } else if (type === 'alarm_overdue') {
-            // High urgency siren for 11h exceeded
-            const startT = ctx.currentTime;
-            for (let i = 0; i < 3; i++) {
-              const offset = i * 0.26;
-              const osc = ctx.createOscillator();
-              const gain = ctx.createGain();
-              osc.type = 'sawtooth';
-              osc.frequency.setValueAtTime(880, startT + offset);
-              osc.frequency.setValueAtTime(587, startT + offset + 0.12);
-
-              gain.gain.setValueAtTime(0.95, startT + offset);
-              gain.gain.exponentialRampToValueAtTime(0.01, startT + offset + 0.24);
-
-              osc.connect(gain);
-              gain.connect(ctx.destination);
-              osc.start(startT + offset);
-              osc.stop(startT + offset + 0.25);
-            }
-          }
-          return;
-        }
-      } catch (err) {
-        console.warn('Web Audio error, trying fallback:', err);
-      }
-
-      // 2. Secondary engine: Direct HTML5 Audio element fallback
-      try {
-        if (fallbackAudioElement) {
-          fallbackAudioElement.currentTime = 0;
-          fallbackAudioElement.play().catch(() => {});
-        } else {
-          const a = new Audio(fallbackChimeUri);
-          a.volume = 1.0;
-          a.play().catch(() => {});
-        }
-      } catch(e) {}
+      // Audio completely muted as requested by user. Zero sound inside application.
+      return;
     }
 
     function playBeep() {
-      playLoudNotification('new_request');
+      // Completely muted
+      return;
     }
 
     /* =================================================================
@@ -2822,73 +2718,83 @@
     if (rememberedLA) $('f_la_name').value = rememberedLA;
 
     $('rider-form').onsubmit = (e) => {
-      if (e && e.preventDefault) e.preventDefault();
+      try {
+        if (e && e.preventDefault) e.preventDefault();
 
-      const la_name = $('f_la_name').value.trim();
-      const branch = $('f_branch').value;
-      const rider_name = $('f_rider_name').value.trim();
-      const rider_id = $('f_rider_id').value.trim().replace(/\D/g, '');
-      const rider_phone = $('f_rider_phone').value.trim();
-      const office = $('f_office').value.trim() || (currentLang === 'ar' ? 'نون داخلي' : 'noon Internal');
-      const rt = $('f_req_type').value;
-      const notes = $('f_notes').value.trim();
-      const urg = $('f_urgent').checked;
+        const la_name = $('f_la_name') ? $('f_la_name').value.trim() : '';
+        const branch = $('f_branch') ? $('f_branch').value : '';
+        const rider_name = $('f_rider_name') ? $('f_rider_name').value.trim() : '';
+        const rider_id = $('f_rider_id') ? $('f_rider_id').value.trim().replace(/\D/g, '') : '';
+        const rider_phone = $('f_rider_phone') ? $('f_rider_phone').value.trim() : '';
+        const office = ($('f_office') && $('f_office').value.trim()) || (currentLang === 'ar' ? 'نون داخلي' : 'noon Internal');
+        const rt = $('f_req_type') ? $('f_req_type').value : 'فتح شيفت';
+        const notes = $('f_notes') ? $('f_notes').value.trim() : '';
+        const urg = $('f_urgent') ? $('f_urgent').checked : false;
 
-      // Shift window inputs (من امتا لي امتا)
-      const shift_start = $('f_shift_start') ? $('f_shift_start').value : '';
-      const shift_end = $('f_shift_end') ? $('f_shift_end').value : '';
-      const shift_window = (shift_start && shift_end) ? `من ${shift_start} إلى ${shift_end} (11 ساعة)` : '11 ساعة نظامي';
+        // Shift window inputs (من امتا لي امتا)
+        const shift_start = $('f_shift_start') ? $('f_shift_start').value : '';
+        const shift_end = $('f_shift_end') ? $('f_shift_end').value : '';
+        const shift_window = (shift_start && shift_end) ? `من ${shift_start} إلى ${shift_end} (11 ساعة)` : '11 ساعة نظامي';
 
-      if (!la_name || !branch || !rider_name || !rider_id) {
-        showToast(currentLang === 'ar' ? 'يرجى استكمال الحقول المطلوبة' : 'Please complete all required fields');
-        return;
+        if (!la_name || !branch || !rider_name || !rider_id) {
+          showToast(currentLang === 'ar' ? 'يرجى استكمال الحقول المطلوبة (اسم LA، الفرع، اسم الطيار، الكود)' : 'Please complete all required fields');
+          return;
+        }
+
+        localStorage.setItem('noon_last_la_name', la_name);
+
+        const newReq = {
+          id: 'r_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          branch,
+          name: rider_name,
+          pid: rider_id,
+          phone: rider_phone,
+          la_name,
+          office,
+          rt,
+          shift_start,
+          shift_end,
+          shift_window,
+          notes,
+          urg,
+          status: 'new',
+          ts: Date.now(),
+          updated: Date.now()
+        };
+
+        // 1. Instant local persistence & view addition
+        if (!Array.isArray(appData.requests)) appData.requests = [];
+        if (!appData.requests.some(r => r.id === newReq.id)) {
+          appData.requests.unshift(newReq);
+        }
+        persistLocal();
+
+        // 2. Add to my submissions
+        if (!Array.isArray(mySubmissions)) mySubmissions = [];
+        mySubmissions.unshift(newReq.id);
+        localStorage.setItem('noon_my_subs', JSON.stringify(mySubmissions.slice(0, 100)));
+
+        // 3. Immediately show confirmation screen
+        if ($('submitted-code')) {
+          $('submitted-code').textContent = `REF: #${newReq.id.slice(-5).toUpperCase()} (${rider_name}) - ${branch}`;
+        }
+        if ($('rider-form')) $('rider-form').style.display = 'none';
+        if ($('submit-success-card')) $('submit-success-card').style.display = 'block';
+
+        showToast(currentLang === 'ar' ? '✅ تم إرسال طلب فتح الشيفت بنجاح' : '✅ Request submitted successfully');
+
+        // 4. Update UI views safely
+        try { renderAll(); } catch(err) { console.warn('renderAll error:', err); }
+
+        // 5. Asynchronous background push (non-blocking, won\'t freeze UI)
+        setTimeout(() => {
+          try { broadcastRealtimeRequest(newReq); } catch(_) {}
+          try { cloudCreateRequest(newReq); } catch(_) {}
+        }, 15);
+      } catch (err) {
+        console.error('Critical form submit error:', err);
+        showToast('حدث خطأ أثناء الإرسال: ' + err.message);
       }
-
-      // 🔊 1. IMMEDIATELY PLAY LOUD NOTIFICATION SOUND ON USER GESTURE!
-      localStorage.setItem('noon_last_la_name', la_name);
-
-      const newReq = {
-        id: 'r_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-        branch,
-        name: rider_name,
-        pid: rider_id,
-        phone: rider_phone,
-        la_name,
-        office,
-        rt,
-        shift_start,
-        shift_end,
-        shift_window,
-        notes,
-        urg,
-        status: 'new',
-        ts: Date.now(),
-        updated: Date.now()
-      };
-
-      // ⚡ 2. INSTANT OPTIMISTIC LOCAL UPDATE (0 Milliseconds Delay!)
-      if (!appData.requests.some(r => r.id === newReq.id)) {
-        appData.requests.unshift(newReq);
-      }
-      persistLocal();
-
-      // Add to my submissions
-      mySubmissions.unshift(newReq.id);
-      localStorage.setItem('noon_my_subs', JSON.stringify(mySubmissions.slice(0, 100)));
-
-      // ⚡ 3. INSTANT UI FEEDBACK
-      $('submitted-code').textContent = `REF: #${newReq.id.slice(-5).toUpperCase()} (${rider_name})`;
-      $('rider-form').style.display = 'none';
-      $('submit-success-card').style.display = 'block';
-
-      showToast(currentLang === 'ar' ? '✅ تم إرسال الطلب وتشغيل الإشعار فوراً' : '✅ Request submitted instantly');
-      renderAll();
-
-      // ⚡ 4. NON-BLOCKING ASYNC CLOUD & WEBSOCKET BROADCAST
-      setTimeout(() => {
-        broadcastRealtimeRequest(newReq);
-        cloudCreateRequest(newReq);
-      }, 10);
     };
 
     $('btn-new-req').onclick = () => {
@@ -2904,15 +2810,19 @@
     };
 
     $('btn-goto-board').onclick = () => {
+      // Auto-unlock board access when clicking "عرض في لوحة الطلبات" from submission card
       if (appRole !== 'opener' && appRole !== 'manager') {
         appRole = 'opener';
         localStorage.setItem('noon_role', 'opener');
+        if (!currentOpenerName) {
+          currentOpenerName = localStorage.getItem('noon_last_la_name') || 'مشرف الفتح';
+          localStorage.setItem('noon_opener_name', currentOpenerName);
+        }
         updateRoleUI();
       }
       switchTab('tab-board');
     };
-
-    /* =================================================================
+/* =================================================================
        Board Rendering & Actions (Opener View)
        ================================================================= */
     
@@ -3607,21 +3517,24 @@
     };
 
     function renderLiveLocationMap() {
-      const pinsGroup = $('radar-pins-group');
       const fleetGrid = $('branch-fleet-grid');
       const search = ($('fleet-branch-search') ? $('fleet-branch-search').value : '').toLowerCase().trim();
-      if (!pinsGroup || !fleetGrid) return;
+      if (!fleetGrid) return;
 
       const activeShifts = (typeof getActiveShifts === 'function') ? getActiveShifts() : [];
       const branches = appData.branches || [];
 
-      // Calculate branch metrics
+      if ($('map-total-branches-badge')) {
+        $('map-total-branches-badge').textContent = `${branches.length} فرع`;
+      }
+
+      // Calculate active riders per branch
       const branchFleetMap = {};
       let totalActiveRiders = 0;
       let activeBranchesCount = 0;
 
       branches.forEach(b => {
-        const shifts = activeShifts.filter(s => s.request.branch === b);
+        const shifts = activeShifts.filter(s => s.request && s.request.branch === b);
         branchFleetMap[b] = shifts;
         if (shifts.length > 0) {
           totalActiveRiders += shifts.length;
@@ -3632,60 +3545,32 @@
       if ($('map-total-riders')) $('map-total-riders').textContent = totalActiveRiders;
       if ($('map-active-branches')) $('map-active-branches').textContent = activeBranchesCount;
 
-      // 1. Render SVG Radar Pins
-      let pinsSvgHtml = '';
-      branches.forEach(b => {
-        const coords = BRANCH_GEO_COORDS[b] || { x: 500, y: 240, zone: 'cairo' };
-        if (selectedFleetZone !== 'all' && coords.zone !== selectedFleetZone) return;
-
-        const shifts = branchFleetMap[b] || [];
-        const count = shifts.length;
-        const hasActive = count > 0;
-        const hasOverdue = shifts.some(s => s.end < Date.now());
-
-        const pinColor = hasOverdue ? '#dc2626' : (hasActive ? '#16a34a' : '#475569');
-        const fillColor = hasOverdue ? '#ef4444' : (hasActive ? '#22c55e' : '#334155');
-
-        pinsSvgHtml += `
-          <g class="branch-pin" onclick="selectFleetBranch('${b}')" transform="translate(${coords.x}, ${coords.y})">
-            ${hasActive ? `<circle cx="0" cy="0" r="10" fill="none" stroke="${pinColor}" class="radar-pulse-circle" />` : ''}
-            <circle cx="0" cy="0" r="${hasActive ? 7 : 5}" fill="${fillColor}" stroke="#ffffff" stroke-width="1.5" />
-            <text x="0" y="-12" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle" style="text-shadow: 0 1px 4px #000;">
-              ${b} ${hasActive ? `(${count})` : ''}
-            </text>
-            ${hasActive ? `
-              <rect x="-14" y="8" width="28" height="14" rx="7" fill="var(--noon-yellow)" />
-              <text x="0" y="19" fill="#000" font-size="9" font-weight="900" text-anchor="middle">${count} 🛵</text>
-            ` : ''}
-          </g>
-        `;
-      });
-      pinsGroup.innerHTML = pinsSvgHtml;
-
-      // 2. Render Branch Fleet Cards Grid
-      let cardsHtml = '';
       const filteredBranches = branches.filter(b => {
-        const coords = BRANCH_GEO_COORDS[b] || { zone: 'cairo' };
-        if (selectedFleetZone !== 'all' && coords.zone !== selectedFleetZone) return false;
-        if (search && !b.toLowerCase().includes(search)) return false;
-        return true;
+        if (!search) return true;
+        if (b.toLowerCase().includes(search)) return true;
+        const shifts = branchFleetMap[b] || [];
+        return shifts.some(s => (s.request.name || '').toLowerCase().includes(search) || (s.request.pid || '').includes(search));
       });
 
-      // Sort: branches with active riders first
+      // Sort branches: those with active riders first, then alphabetically
       filteredBranches.sort((a, b) => {
         const countA = (branchFleetMap[a] || []).length;
         const countB = (branchFleetMap[b] || []).length;
-        return countB - countA;
+        if (countB !== countA) return countB - countA;
+        return a.localeCompare(b, 'ar');
       });
 
       if (!filteredBranches.length) {
-        fleetGrid.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;">
-          <h3>لا توجد فروع مطابقة للبحث</h3>
+        fleetGrid.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1; padding: 30px;">
+          <div style="font-size: 32px; margin-bottom: 8px;">🏢</div>
+          <h3>${search ? 'لا توجد فروع مطابقة للبحث' : 'لا توجد فروع مسجلة حتى الآن'}</h3>
+          <p style="color: var(--text-muted); margin-bottom: 12px;">${search ? 'جرب البحث بكلمة أخرى' : 'ابدأ بإضافة فروع العمل لمتابعة الطيارين'}</p>
+          <button type="button" class="btn btn-noon btn-sm" onclick="promptAddBranchModal()">➕ إضافة أول فرع</button>
         </div>`;
         return;
       }
 
-      cardsHtml = filteredBranches.map(b => {
+      fleetGrid.innerHTML = filteredBranches.map(b => {
         const shifts = branchFleetMap[b] || [];
         const count = shifts.length;
         const hasActive = count > 0;
@@ -3702,55 +3587,71 @@
                 <span>📍 ${b}</span>
               </div>
               <span class="fleet-riders-badge ${hasActive ? '' : 'empty'}">
-                ${hasActive ? `${count} طيار نشط 🛵` : 'لا يوجد طيارين'}
+                ${hasActive ? `${count} طيار مفتوح لهم شيفت 🛵` : 'لا يوجد طيارين الآن'}
               </span>
             </div>
 
-            <div style="font-size:11px; color:var(--text-muted); display:flex; justify-content:space-between; margin:4px 0;">
+            <div style="font-size:12px; color:var(--text-muted); display:flex; justify-content:space-between; margin:4px 0;">
               <span>👤 المشرف: <b>${openerName}</b></span>
-              ${hasOverdue ? '<span style="color:var(--danger); font-weight:bold;">🚨 به متأخر</span>' : ''}
+              ${hasOverdue ? '<span style="color:var(--danger); font-weight:bold;">🚨 به شيفت متجاوز 11س</span>' : ''}
             </div>
 
             ${hasActive ? `
               <div class="fleet-riders-list">
-                ${shifts.slice(0, 3).map(s => {
+                ${shifts.slice(0, 4).map(s => {
                   const rem = s.end - Date.now();
                   const isExp = rem <= 0;
                   return `
                     <div class="fleet-rider-row">
                       <span>🛵 <b>${s.request.name}</b> (#${s.request.pid})</span>
                       <span style="font-family:monospace; color:${isExp ? 'var(--danger)' : 'var(--success)'}; font-weight:bold;">
-                        ${isExp ? 'منتهي' : formatDurationExact(rem)}
+                        ${isExp ? 'انتهى' : formatDurationExact(rem)}
                       </span>
                     </div>
                   `;
                 }).join('')}
-                ${shifts.length > 3 ? `<div style="text-align:center; font-size:10px; color:var(--primary); font-weight:bold; margin-top:2px;">+ ${shifts.length - 3} طيارين آخرين بالفرع</div>` : ''}
+                ${shifts.length > 4 ? `<div style="text-align:center; font-size:11px; color:var(--primary); font-weight:bold; margin-top:2px;">+ ${shifts.length - 4} طيارين آخرين بالفرع (اضغط للعرض في اللوحة)</div>` : ''}
               </div>
             ` : `
-              <div style="font-size:11px; color:var(--text-muted); text-align:center; padding:8px 0; background:var(--bg); border-radius:var(--radius-sm);">
-                ☕ الفرع هادئ حالياً ولا يوجد شيفتات مفتوحة
+              <div style="font-size:12px; color:var(--text-muted); text-align:center; padding:10px 0; background:var(--bg); border-radius:var(--radius-sm); border: 1px dashed var(--card-border);">
+                ☕ لا توجد شيفتات نشطة في هذا الفرع حالياً
               </div>
             `}
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 11px; color: var(--primary);">
+              <span>اضغط لعرض طلبات الفرع في اللوحة ←</span>
+              <button type="button" class="btn btn-outline btn-sm" style="padding: 2px 8px; font-size: 11px; color: var(--danger); border-color: var(--card-border);" onclick="event.stopPropagation(); deleteBranchDirect('${b}');" title="حذف الفرع">🗑️</button>
+            </div>
           </div>
         `;
       }).join('');
-
-      fleetGrid.innerHTML = cardsHtml;
     }
 
-    window.filterFleetZone = function(zone) {
-      selectedFleetZone = zone;
-      $('#zone-filter-chips .chip').forEach(c => c.classList.remove('active'));
-      const activeBtn = event.currentTarget || event.target;
-      if (activeBtn) activeBtn.classList.add('active');
-      renderLiveLocationMap();
+    window.promptAddBranchModal = function() {
+      const name = prompt('أدخل اسم الفرع الجديد:');
+      if (name && name.trim()) {
+        const branchName = name.trim();
+        if (!appData.branches.includes(branchName)) {
+          appData.branches.push(branchName);
+          persistLocal();
+          populateBranchSelects();
+          renderLiveLocationMap();
+          renderBoard();
+          showToast('✓ تم إضافة فرع: ' + branchName);
+        } else {
+          showToast('الفرع موجود بالفعل');
+        }
+      }
     };
 
-    window.selectFleetBranch = function(branchName) {
-      if ($('fleet-branch-search')) $('fleet-branch-search').value = branchName;
-      renderLiveLocationMap();
-      showToast(`📍 تم تحديد فرع: ${branchName}`);
+    window.deleteBranchDirect = function(branchName) {
+      if (confirm('هل أنت متأكد من حذف فرع "' + branchName + '"؟')) {
+        appData.branches = appData.branches.filter(b => b !== branchName);
+        persistLocal();
+        populateBranchSelects();
+        renderLiveLocationMap();
+        renderBoard();
+        showToast('✓ تم حذف الفرع بنجاح');
+      }
     };
 
     if ($('fleet-branch-search')) {
