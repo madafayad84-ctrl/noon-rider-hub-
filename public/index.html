@@ -2191,7 +2191,7 @@
       localStorage.setItem('noon_sound', soundEnabled);
       $('btn-sound').textContent = soundEnabled ? '🔔' : '🔕';
       $('btn-sound').classList.toggle('active', soundEnabled);
-      if (soundEnabled) playBeep();
+
     };
 
     async function toggleWakeLock() {
@@ -2673,7 +2673,6 @@ $('btn-role-toggle').onclick = () => {
           const req = JSON.parse(e.data);
           if (!appData.requests.some(r => r.id === req.id)) {
             appData.requests.unshift(req);
-            playBeep();
             renderAll();
           }
         });
@@ -4194,7 +4193,6 @@ $('btn-role-toggle').onclick = () => {
           hasOverdue = true;
           if (!el.classList.contains('overdue')) {
             el.classList.add('overdue');
-            playLoudNotification('alarm_overdue');
           }
           el.innerHTML = `🚨 <b>انتهت الـ 11 ساعة! متأخر منذ: <span class="cd-val">${formatDurationExact(-diff)}</span></b>`;
         } else {
