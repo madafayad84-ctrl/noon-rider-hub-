@@ -1001,7 +1001,10 @@
       <div id="role-pill-wrap" style="display:flex; gap:6px; align-items:center;">
         <button id="btn-force-sync" class="icon-btn" style="padding: 2px 8px; font-size: 11px;" title="تحديث السحابة الآن">🔄 مزامنة</button>
         <button id="btn-role-toggle" class="icon-btn" style="padding: 2px 8px; font-size: 11px;">
-          🔑 <span id="txt-role-state">دخول فريق الفتح</span>
+          🔑 <span id="txt-role-state">دخول فريق العمل</span>
+        </button>
+        <button id="btn-direct-mgr-login" class="icon-btn" style="padding: 2px 8px; font-size: 11px; border-color:var(--noon-yellow); color:var(--noon-yellow);" onclick="promptAuthModal()" title="تسجيل دخول المدير">
+          👑 دخول المدير
         </button>
       </div>
     </div>
@@ -2003,14 +2006,13 @@
 
     let audioCtx = null;
 
-    // Generate a high-clarity 16-bit PCM WAV Data URI chime for 100% universal browser fallback
+    // Generate high-clarity 16-bit PCM WAV Data URI chime
     function generateChimeWavUri() {
       const sampleRate = 22050;
-      const duration = 0.45;
+      const duration = 0.50;
       const numSamples = Math.floor(sampleRate * duration);
       const buffer = new Uint8Array(44 + numSamples * 2);
       
-      // WAV Header
       const writeString = (offset, str) => {
         for (let i = 0; i < str.length; i++) buffer[offset + i] = str.charCodeAt(i);
       };
@@ -2030,8 +2032,8 @@
       writeString(8, 'WAVE');
       writeString(12, 'fmt ');
       writeUint32(16, 16);
-      writeUint16(20, 1); // PCM
-      writeUint16(22, 1); // Mono
+      writeUint16(20, 1);
+      writeUint16(22, 1);
       writeUint32(24, sampleRate);
       writeUint32(28, sampleRate * 2);
       writeUint16(32, 2);
@@ -2039,14 +2041,14 @@
       writeString(36, 'data');
       writeUint32(40, numSamples * 2);
 
-      // Synthesize a loud 3-tone chime (587Hz -> 880Hz -> 1174Hz)
+      // Distinct, attention-grabbing chime (587Hz -> 880Hz -> 1174Hz)
       for (let i = 0; i < numSamples; i++) {
         const t = i / sampleRate;
-        let freq = 587.33; // D5
-        if (t > 0.12) freq = 880.00; // A5
-        if (t > 0.25) freq = 1174.66; // D6
+        let freq = 587.33;
+        if (t > 0.12) freq = 880.00;
+        if (t > 0.25) freq = 1174.66;
         
-        const env = Math.max(0, 1 - (t % 0.14) / 0.14);
+        const env = Math.max(0, 1 - (t % 0.16) / 0.16);
         const sample = Math.sin(2 * Math.PI * freq * t) * env * 28000;
         const intSample = Math.max(-32768, Math.min(32767, Math.floor(sample)));
         const offset = 44 + i * 2;
@@ -2077,16 +2079,63 @@
       return audioCtx;
     }
 
-    // Audio unlock disabled - audio muted
+    function unlockAudio() {
+      try {
+        const ctx = getAudioContext();
+        if (ctx && ctx.state === 'suspended') ctx.resume();
+        if (fallbackAudioElement) {
+          fallbackAudioElement.play().then(() => {
+            fallbackAudioElement.pause();
+            fallbackAudioElement.currentTime = 0;
+          }).catch(() => {});
+        }
+      } catch(e) {}
+    }
 
+    ['click', 'touchstart', 'touchend', 'mousedown', 'keydown'].forEach(evt => {
+      document.addEventListener(evt, unlockAudio, { passive: true, capture: true });
+    });
+
+    // 🔔 Loud notification chime for incoming shift requests
     function playLoudNotification(type = 'new_request') {
-      // Audio completely muted as requested by user. Zero sound inside application.
-      return;
+      try {
+        const ctx = getAudioContext();
+        if (ctx) {
+          if (ctx.state === 'suspended') ctx.resume();
+
+          // 3-tone bright noon alert chime
+          const notes = [587.33, 880.00, 1174.66];
+          const startT = ctx.currentTime;
+          notes.forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, startT + idx * 0.13);
+
+            gain.gain.setValueAtTime(0.01, startT + idx * 0.13);
+            gain.gain.linearRampToValueAtTime(0.95, startT + idx * 0.13 + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, startT + idx * 0.13 + 0.40);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(startT + idx * 0.13);
+            osc.stop(startT + idx * 0.13 + 0.42);
+          });
+          return;
+        }
+      } catch (err) {}
+
+      // Fallback via HTML5 Audio element
+      try {
+        if (fallbackAudioElement) {
+          fallbackAudioElement.currentTime = 0;
+          fallbackAudioElement.play().catch(() => {});
+        }
+      } catch(e) {}
     }
 
     function playBeep() {
-      // Completely muted
-      return;
+      playLoudNotification('new_request');
     }
 
     /* =================================================================
@@ -2172,25 +2221,62 @@
        Role Management (LA vs Opener vs Manager)
        ================================================================= */
     function updateRoleUI() {
-      const isOpenerOrMgr = appRole === 'opener' || appRole === 'manager';
-      $('nav-board').style.display = isOpenerOrMgr ? 'inline-flex' : 'none';
-      $('nav-shifts').style.display = isOpenerOrMgr ? 'inline-flex' : 'none';
-      $('nav-pilots').style.display = isOpenerOrMgr ? 'inline-flex' : 'none';
-      $('nav-manager').style.display = appRole === 'manager' ? 'inline-flex' : 'none';
+      const isMgr = appRole === 'manager';
+      const isOpener = appRole === 'opener';
+
+      // 👑 Manager Mode: Isolated view. When logged in as manager, show Manager tab exclusively.
+      if (isMgr) {
+        $('nav-form').style.display = 'none';
+        $('nav-my').style.display = 'none';
+        $('nav-board').style.display = 'none';
+        $('nav-shifts').style.display = 'none';
+        $('nav-pilots').style.display = 'none';
+        $('nav-manager').style.display = 'inline-flex';
+        $('txt-role-state').textContent = '🔒 خروج من لوحة المدير';
+        $('btn-role-toggle').classList.add('active');
+        return;
+      }
+
+      // Normal mode (LA & Dispatcher)
+      $('nav-form').style.display = 'inline-flex';
+      $('nav-my').style.display = 'inline-flex';
+      $('nav-board').style.display = isOpener ? 'inline-flex' : 'none';
+      $('nav-shifts').style.display = isOpener ? 'inline-flex' : 'none';
+      $('nav-pilots').style.display = isOpener ? 'inline-flex' : 'none';
+      $('nav-manager').style.display = 'none'; // NEVER shown unless unlocked by Manager Password!
 
       const t = I18N[currentLang];
-      $('txt-role-state').textContent = isOpenerOrMgr ? t.role_logout_text : t.role_login_text;
-      $('btn-role-toggle').classList.toggle('active', isOpenerOrMgr);
+      $('txt-role-state').textContent = isOpener ? 'خروج فريق الفتح' : '🔑 دخول فريق العمل';
+      $('btn-role-toggle').classList.toggle('active', isOpener);
 
-      if (isOpenerOrMgr) {
-        $('current-opener-name').textContent = currentOpenerName || (currentLang === 'ar' ? 'مشرف غير محدد' : 'Anonymous');
+      if (isOpener) {
+        $('current-opener-name').textContent = currentOpenerName || 'مشرف الفتح';
         $('my-branches-summary').textContent = myAssignedBranches.length
           ? myAssignedBranches.join('، ')
-          : (currentLang === 'ar' ? 'جميع الفروع' : 'All Branches');
+          : 'جميع الفروع';
       }
     }
 
+    // Role toggle & Login
     $('btn-role-toggle').onclick = () => {
+      if (appRole === 'manager' || appRole === 'opener') {
+        appRole = 'la';
+        localStorage.setItem('noon_role', 'la');
+        updateRoleUI();
+        switchTab('tab-form');
+        showToast('تم تسجيل الخروج بنجاح');
+      } else {
+        promptAuthModal();
+      }
+    };
+
+    function promptAuthModal() {
+      $('auth-pin-input').value = '';
+      $('auth-error-msg').textContent = '';
+      $('modal-auth-login').classList.remove('hidden');
+      setTimeout(() => $('auth-pin-input').focus(), 150);
+    }
+$('btn-role-toggle').onclick = () => {
       if (appRole === 'opener' || appRole === 'manager') {
         appRole = 'la';
         localStorage.setItem('noon_role', 'la');
@@ -2217,17 +2303,19 @@
       const mgrPin = localStorage.getItem('noon_mgr_pin') || (appData.config && appData.config.mgrPin) || '7700';
 
       if (pin === mgrPin) {
+        // 👑 Direct access to Manager Portal exclusively
         appRole = 'manager';
         localStorage.setItem('noon_role', 'manager');
         updateRoleUI();
         $('modal-auth-login').classList.add('hidden');
-        switchTab('tab-board');
-        showToast(currentLang === 'ar' ? 'مرحباً بالمدير! تم التحقق بنجاح 📊' : 'Welcome Manager! Access granted 📊');
+        switchTab('tab-manager');
+        showToast(currentLang === 'ar' ? 'مرحباً بالمدير! تم الدخول إلى لوحة المدير 📊' : 'Welcome Manager! Access granted 📊');
       } else if (pin === openerPin) {
+        // 🛵 Access to Dispatcher Operations Board
         appRole = 'opener';
         localStorage.setItem('noon_role', 'opener');
         if (!currentOpenerName) {
-          currentOpenerName = currentLang === 'ar' ? 'مشرف الفتح' : 'Dispatcher';
+          currentOpenerName = localStorage.getItem('noon_last_la_name') || (currentLang === 'ar' ? 'مشرف الفتح' : 'Dispatcher');
           localStorage.setItem('noon_opener_name', currentOpenerName);
         }
         updateRoleUI();
@@ -2270,16 +2358,27 @@
     /* =================================================================
        Navigation Tabs
        ================================================================= */
+    let currentActiveTab = 'tab-form';
+
     function switchTab(tabId) {
-      $$('main > section').forEach(sec => sec.style.display = 'none');
+      currentActiveTab = tabId;
+      $('main > section').forEach(sec => sec.style.display = 'none');
       const target = $(tabId);
       if (target) target.style.display = 'block';
 
-      $$('.main-nav .nav-btn').forEach(btn => {
+      $('.main-nav .nav-btn').forEach(btn => {
         btn.classList.toggle('active', btn.getAttribute('data-tab') === tabId);
       });
 
-      renderAll();
+      renderActiveTabOnly();
+    }
+
+    function renderActiveTabOnly() {
+      if (currentActiveTab === 'tab-board') renderBoard();
+      else if (currentActiveTab === 'tab-shifts') renderShifts();
+      else if (currentActiveTab === 'tab-pilots') renderPilots();
+      else if (currentActiveTab === 'tab-manager') renderManagerDashboard();
+      else if (currentActiveTab === 'tab-my') renderMySubmissions();
     }
 
     $$('.main-nav .nav-btn').forEach(btn => {
@@ -2783,8 +2882,10 @@
 
         showToast(currentLang === 'ar' ? '✅ تم إرسال طلب فتح الشيفت بنجاح' : '✅ Request submitted successfully');
 
-        // 4. Update UI views safely
-        try { renderAll(); } catch(err) { console.warn('renderAll error:', err); }
+        // 4. Super fast instant local render (no heavy background re-renders)
+        try {
+          if (typeof renderMySubmissions === 'function') renderMySubmissions();
+        } catch(err) {}
 
         // 5. Asynchronous background push (non-blocking, won\'t freeze UI)
         setTimeout(() => {
