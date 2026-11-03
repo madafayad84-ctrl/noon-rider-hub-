@@ -3975,6 +3975,199 @@
       showToast(currentLang === 'ar' ? '✅ تم تصدير الملف بنجاح' : '✅ Exported successfully');
     };
 
+    
+    /* =================================================================
+       Request Deletion & Archiving Engine
+       ================================================================= */
+    let pendingDeleteId = null;
+
+    window.promptDeleteRequest = function(id) {
+      pendingDeleteId = id;
+      const req = appData.requests.find(r => r.id === id);
+      if (!req) return;
+      const preview = $('delete-request-preview');
+      if (preview) {
+        preview.innerHTML = `
+          <div><b>الطيار:</b> ${req.name} (كود #${req.pid})</div>
+          <div><b>الفرع:</b> ${req.branch} | <b>نوع الطلب:</b> ${req.rt || 'فتح شيفت'}</div>
+          <div><b>الـ LA الطالب:</b> ${req.la_name || '-'}</div>
+          <div><b>الحالة:</b> ${req.status === 'done' ? '🟢 تم الفتح' : (req.status === 'rejected' ? '🔴 مرفوض' : '⏳ قيد الانتظار')}</div>
+        `;
+      }
+      $('modal-delete-request').classList.remove('hidden');
+    };
+
+    if ($('btn-confirm-delete-req')) {
+      $('btn-confirm-delete-req').onclick = () => {
+        if (!pendingDeleteId) return;
+        const idx = appData.requests.findIndex(r => r.id === pendingDeleteId);
+        if (idx !== -1) {
+          const deletedReq = appData.requests.splice(idx, 1)[0];
+          deletedReq.deletedAt = Date.now();
+          if (!Array.isArray(appData.archived_requests)) appData.archived_requests = [];
+          appData.archived_requests.unshift(deletedReq);
+
+          try {
+            localStorage.setItem('noon_archived_requests', JSON.stringify(appData.archived_requests.slice(0, 500)));
+          } catch(_) {}
+          persistLocal();
+
+          if (typeof mqttClient !== 'undefined' && mqttClient && mqttClient.connected) {
+            try { mqttClient.publish(MQTT_TOPIC_DELETE, JSON.stringify({ id: pendingDeleteId })); } catch(_) {}
+          }
+
+          renderAll();
+          showToast(currentLang === 'ar' ? '✓ تم حذف الطلب ونقله إلى الأرشيف بأمان' : '✓ Request archived safely');
+        }
+        $('modal-delete-request').classList.add('hidden');
+        pendingDeleteId = null;
+      };
+    }
+
+    /* =================================================================
+       Archive Viewer Modal
+       ================================================================= */
+    function renderArchiveViewer() {
+      const container = $('archive-requests-list');
+      if (!container) return;
+      const search = ($('archive-search') ? $('archive-search').value : '').toLowerCase().trim();
+      const archives = Array.isArray(appData.archived_requests) ? appData.archived_requests : [];
+
+      const filtered = archives.filter(r => {
+        if (!search) return true;
+        return (r.name || '').toLowerCase().includes(search) ||
+               (r.pid || '').includes(search) ||
+               (r.branch || '').toLowerCase().includes(search) ||
+               (r.la_name || '').toLowerCase().includes(search);
+      });
+
+      if (!filtered.length) {
+        container.innerHTML = `<div class="empty-state" style="padding:24px;">
+          <div class="empty-icon">📂</div>
+          <h4>${currentLang === 'ar' ? 'لا توجد طلبات مؤرشفة مطابقة' : 'No archived requests found'}</h4>
+        </div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(r => `
+        <div style="background:var(--bg); border:1px solid var(--card-border); padding:10px 14px; border-radius:var(--radius-sm); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div>
+            <b>${r.name}</b> <span style="font-size:12px; color:var(--text-muted);">(#${r.pid})</span> - <b>${r.branch}</b>
+            <div style="font-size:12px; color:var(--text-muted);">الطلب: ${r.rt || 'فتح شيفت'} | LA: ${r.la_name || '-'} | تاريخ الأرشفة: ${new Date(r.deletedAt || r.updated || r.ts).toLocaleString('ar-EG')}</div>
+          </div>
+          <div>
+            <span class="badge badge-${r.status === 'done' ? 'done' : (r.status === 'rejected' ? 'rejected' : 'new')}">${r.status === 'done' ? 'تم الفتح' : (r.status === 'rejected' ? 'مرفوض' : 'معلق')}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    if ($('btn-open-archive-modal')) {
+      $('btn-open-archive-modal').onclick = () => {
+        renderArchiveViewer();
+        $('modal-archive-viewer').classList.remove('hidden');
+      };
+    }
+
+    if ($('archive-search')) {
+      $('archive-search').oninput = renderArchiveViewer;
+    }
+
+    if ($('btn-export-archive-csv')) {
+      $('btn-export-archive-csv').onclick = () => {
+        const archives = Array.isArray(appData.archived_requests) ? appData.archived_requests : [];
+        if (!archives.length) {
+          showToast(currentLang === 'ar' ? 'لا توجد بيانات لتصديرها' : 'No data to export');
+          return;
+        }
+        let csv = "\uFEFFالكود,اسم الطيار,الفرع,نوع الطلب,الـ LA,الحالة,تاريخ الطلب\n";
+        archives.forEach(r => {
+          csv += '"' + (r.pid || '') + '","' + (r.name || '') + '","' + (r.branch || '') + '","' + (r.rt || 'فتح شيفت') + '","' + (r.la_name || '') + '","' + (r.status || '') + '","' + new Date(r.ts).toLocaleString('ar-EG') + '"\n';
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `noon_rider_archive_${Date.now()}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('✓ تم تصدير ملف الأرشيف بنجاح');
+      };
+    }
+
+    /* =================================================================
+       Manage Team Modal Handlers
+       ================================================================= */
+    function renderManageTeamList() {
+      const container = $('team-openers-list-manage');
+      if (!container) return;
+      const openers = appData.openers || [];
+      if (!openers.length) {
+        container.innerHTML = '<div style="font-size:13px; color:var(--text-muted); text-align:center; padding:12px;">لا يوجد مشرفين مسجلين بعد.</div>';
+        return;
+      }
+      container.innerHTML = openers.map(op => `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1px solid var(--card-border); padding:8px 12px; border-radius:var(--radius-sm); margin-bottom:6px;">
+          <div>
+            <b>👤 ${op.name}</b>
+            <div style="font-size:11.5px; color:var(--text-muted);">الفروع: ${(op.branches || []).join('، ') || 'كل الفروع'}</div>
+          </div>
+          <button type="button" class="btn btn-outline btn-sm" style="color:var(--danger); border-color:var(--card-border); padding:2px 8px;" onclick="removeTeamOpener('${op.name}')">حذف</button>
+        </div>
+      `).join('');
+    }
+
+    window.removeTeamOpener = function(openerName) {
+      if (confirm('هل تريد حذف المشرف ' + openerName + ' من الفريق؟')) {
+        appData.openers = (appData.openers || []).filter(o => o.name !== openerName);
+        persistLocal();
+        renderTeamOpenersGrid();
+        renderManageTeamList();
+        showToast('✓ تم حذف المشرف من الفريق');
+      }
+    };
+
+    if ($('btn-manage-team-modal')) {
+      $('btn-manage-team-modal').onclick = () => {
+        // Populate branches select in new-opener-branch
+        const sel = $('new-opener-branch');
+        if (sel) {
+          sel.innerHTML = '<option value="">جميع الفروع (تغطية عامة)</option>' + (appData.branches || []).map(b => `<option value="${b}">${b}</option>`).join('');
+        }
+        renderManageTeamList();
+        $('modal-manage-team').classList.remove('hidden');
+      };
+    }
+
+    if ($('btn-save-new-team-member')) {
+      $('btn-save-new-team-member').onclick = () => {
+        const name = ($('new-opener-name') ? $('new-opener-name').value : '').trim();
+        const branch = $('new-opener-branch') ? $('new-opener-branch').value : '';
+        if (!name) {
+          showToast('يرجى كتابة اسم المشرف');
+          return;
+        }
+        if (!Array.isArray(appData.openers)) appData.openers = [];
+        const existing = appData.openers.find(o => o.name === name);
+        if (existing) {
+          showToast('المشرف مسجل بالفعل في الفريق');
+          return;
+        }
+        appData.openers.push({
+          id: 'op_' + Date.now().toString(36),
+          name: name,
+          status: 'online',
+          branches: branch ? [branch] : ['كل الفروع'],
+          shiftsOpened: 0
+        });
+        persistLocal();
+        renderTeamOpenersGrid();
+        renderManageTeamList();
+        if ($('new-opener-name')) $('new-opener-name').value = '';
+        showToast('✓ تم إضافة ' + name + ' لفريق الفتح');
+      };
+    }
+
     /* =================================================================
        Modal Handlers
        ================================================================= */
@@ -4224,13 +4417,16 @@
       };
     }
 
-    // Register Service Worker for PWA offline resilience
-    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
-      navigator.serviceWorker.register('sw.js').then(reg => {
-        console.log('🚀 ServiceWorker registered successfully:', reg.scope);
-      }).catch(err => {
-        console.warn('ServiceWorker registration note:', err);
+    // Self-healing: Unregister any service workers and clear cache to guarantee 100% fresh real-time code across all devices
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        for (const reg of regs) reg.unregister();
       });
+      if (typeof caches !== 'undefined') {
+        caches.keys().then(names => {
+          for (const name of names) caches.delete(name);
+        });
+      }
     }
 
     // Initial boot
