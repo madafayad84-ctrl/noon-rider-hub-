@@ -1991,7 +1991,13 @@
     /* =================================================================
        DOM Helpers & Selectors
        ================================================================= */
-    const $ = id => document.getElementById(id);
+    const $ = sel => {
+      if (typeof sel !== 'string') return null;
+      if (sel.includes(' ') || sel.includes('>') || sel.startsWith('.') || sel.includes('[') || sel.includes(':')) {
+        return document.querySelectorAll(sel);
+      }
+      return document.getElementById(sel);
+    };
     const $$ = sel => document.querySelectorAll(sel);
 
     function showToast(msg) {
@@ -2082,22 +2088,20 @@
     function unlockAudio() {
       try {
         const ctx = getAudioContext();
-        if (ctx && ctx.state === 'suspended') ctx.resume();
-        if (fallbackAudioElement) {
-          fallbackAudioElement.play().then(() => {
-            fallbackAudioElement.pause();
-            fallbackAudioElement.currentTime = 0;
-          }).catch(() => {});
-        }
+        if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
       } catch(e) {}
     }
 
-    ['click', 'touchstart', 'touchend', 'mousedown', 'keydown'].forEach(evt => {
-      document.addEventListener(evt, unlockAudio, { passive: true, capture: true });
-    });
+    const _unlockEvents = ['click', 'touchstart', 'keydown'];
+    const _doUnlock = () => {
+      unlockAudio();
+      _unlockEvents.forEach(e => document.removeEventListener(e, _doUnlock, true));
+    };
+    _unlockEvents.forEach(e => document.addEventListener(e, _doUnlock, { passive: true, capture: true }));
 
     // 🔔 Loud notification chime for incoming shift requests
     function playLoudNotification(type = 'new_request') {
+      if (!soundEnabled) return;
       try {
         const ctx = getAudioContext();
         if (ctx) {
@@ -2250,44 +2254,32 @@
       $('btn-role-toggle').classList.toggle('active', isOpener);
 
       if (isOpener) {
-        $('current-opener-name').textContent = currentOpenerName || 'مشرف الفتح';
-        $('my-branches-summary').textContent = myAssignedBranches.length
-          ? myAssignedBranches.join('، ')
-          : 'جميع الفروع';
+        if ($('current-opener-name')) $('current-opener-name').textContent = currentOpenerName || 'مشرف الفتح';
+        if ($('my-branches-summary')) {
+          $('my-branches-summary').textContent = myAssignedBranches.length
+            ? myAssignedBranches.join('، ')
+            : 'جميع الفروع';
+        }
       }
     }
 
     // Role toggle & Login
-    $('btn-role-toggle').onclick = () => {
-      if (appRole === 'manager' || appRole === 'opener') {
-        appRole = 'la';
-        localStorage.setItem('noon_role', 'la');
-        updateRoleUI();
-        switchTab('tab-form');
-        showToast('تم تسجيل الخروج بنجاح');
-      } else {
-        promptAuthModal();
-      }
-    };
-
     function promptAuthModal() {
       $('auth-pin-input').value = '';
       $('auth-error-msg').textContent = '';
       $('modal-auth-login').classList.remove('hidden');
       setTimeout(() => $('auth-pin-input').focus(), 150);
     }
-$('btn-role-toggle').onclick = () => {
-      if (appRole === 'opener' || appRole === 'manager') {
+
+    $('btn-role-toggle').onclick = () => {
+      if (appRole === 'manager' || appRole === 'opener') {
         appRole = 'la';
         localStorage.setItem('noon_role', 'la');
         updateRoleUI();
         switchTab('tab-form');
-        showToast(currentLang === 'ar' ? 'تم الخروج من لوحة التحكم' : 'Logged out');
+        showToast(currentLang === 'ar' ? 'تم تسجيل الخروج بنجاح' : 'Logged out successfully');
       } else {
-        $('auth-pin-input').value = '';
-        $('auth-error-msg').textContent = '';
-        $('modal-auth-login').classList.remove('hidden');
-        setTimeout(() => $('auth-pin-input').focus(), 100);
+        promptAuthModal();
       }
     };
 
@@ -2750,7 +2742,8 @@ $('btn-role-toggle').onclick = () => {
       return `${pad(h)}:${pad(m)}:${pad(s)}`;
     }
 
-    window.applyShiftPreset = function(mode) {
+    function applyShiftPreset(mode) {
+      window.applyShiftPreset = applyShiftPreset;
       const now = new Date();
       const pad = n => String(n).padStart(2, '0');
       const fmt = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -2880,6 +2873,7 @@ $('btn-role-toggle').onclick = () => {
         if ($('submit-success-card')) $('submit-success-card').style.display = 'block';
 
         showToast(currentLang === 'ar' ? '✅ تم إرسال طلب فتح الشيفت بنجاح' : '✅ Request submitted successfully');
+        playLoudNotification('new_request');
 
         // 4. Super fast instant local render (no heavy background re-renders)
         try {
@@ -4208,6 +4202,9 @@ $('btn-role-toggle').onclick = () => {
     setLanguage(currentLang);
     updateRoleUI();
     loadData();
+    if (appRole === 'manager') {
+      switchTab('tab-manager');
+    }
   </script>
 </body>
 </html>
