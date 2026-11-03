@@ -1,0 +1,26 @@
+{
+  "name": "بوابة نون للطيارين | noon Rider Hub",
+  "short_name": "noon Riders",
+  "description": "منظومة نون الرقمية الموحدة لعمليات وشيفتات الطيارين بالفروع",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#121417",
+  "theme_color": "#feee00",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

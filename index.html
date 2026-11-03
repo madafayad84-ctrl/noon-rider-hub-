@@ -4,6 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>noon Rider Hub | بوابة نون لعمليات وشيفتات الطيارين</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#feee00">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="noon Riders">
+  <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -988,6 +994,10 @@
         <!-- Screen WakeLock toggle -->
         <button id="btn-wake" class="icon-btn" title="إبقاء الشاشة مضاءة | Keep Screen Awake">
           🔆
+        </button>
+        <!-- Deployment & Operations Guide -->
+        <button id="btn-open-guide" class="icon-btn" style="background:var(--noon-yellow); color:#121417; font-weight:bold; border-color:var(--noon-yellow);" title="دليل التشغيل للفروع">
+          📖 دليل الفروع
         </button>
       </div>
     </div>
@@ -2796,6 +2806,12 @@
       $('dir_branch').innerHTML = defaultOpt + opts;
       $('p_branch').innerHTML = defaultOpt + opts;
 
+      // Auto-restore last selected branch for effortless rapid submission
+      const rememberedBranch = localStorage.getItem('noon_last_branch');
+      if (rememberedBranch && branches.includes(rememberedBranch)) {
+        $('f_branch').value = rememberedBranch;
+      }
+
       // Populate office datalist
       const offices = [...new Set(appData.requests.map(r => r.office).filter(Boolean))];
       $('office-suggestions').innerHTML = offices.map(o => `<option value="${o}">`).join('');
@@ -2833,6 +2849,7 @@
         }
 
         localStorage.setItem('noon_last_la_name', la_name);
+        localStorage.setItem('noon_last_branch', branch);
 
         const newReq = {
           id: 'r_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
@@ -2895,6 +2912,9 @@
       $('rider-form').reset();
       const lastLA = localStorage.getItem('noon_last_la_name');
       if (lastLA) $('f_la_name').value = lastLA;
+      const lastBranch = localStorage.getItem('noon_last_branch');
+      if (lastBranch && $('f_branch')) $('f_branch').value = lastBranch;
+      applyShiftPreset(11);
       $('submit-success-card').style.display = 'none';
       $('rider-form').style.display = 'block';
     };
@@ -4197,6 +4217,22 @@
     }, 1000);
 
 
+    // Deployment Guide Modal Trigger
+    if ($('btn-open-guide')) {
+      $('btn-open-guide').onclick = () => {
+        $('modal-branch-guide').classList.remove('hidden');
+      };
+    }
+
+    // Register Service Worker for PWA offline resilience
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
+      navigator.serviceWorker.register('sw.js').then(reg => {
+        console.log('🚀 ServiceWorker registered successfully:', reg.scope);
+      }).catch(err => {
+        console.warn('ServiceWorker registration note:', err);
+      });
+    }
+
     // Initial boot
     setTheme(currentTheme);
     setLanguage(currentLang);
@@ -4206,5 +4242,51 @@
       switchTab('tab-manager');
     }
   </script>
+
+  <!-- Deployment & Branch Operations Guide Modal -->
+  <div id="modal-branch-guide" class="modal-overlay hidden">
+    <div class="modal-box" style="max-width: 650px; max-height: 85vh; overflow-y: auto;">
+      <div class="modal-title">
+        <span>📖 دليل تشغيل منظومة نون في الفروع (Operations Guide)</span>
+        <button class="close-modal" onclick="$('modal-branch-guide').classList.add('hidden')">✕</button>
+      </div>
+      <div style="font-size: 14px; line-height: 1.7; color: var(--text-main);">
+        <div style="background: var(--badge-bg); border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 14px; border-right: 4px solid var(--noon-yellow);">
+          <b>🌟 المنظومة جاهزة للعمل الميداني الفوري على مستوى 30 فرعاً!</b><br>
+          <span style="font-size: 12.5px; color: var(--text-muted);">تم تصميم النظام ليعمل بربط سحابي لحظي (&lt;1 ثانية) بين مسؤولي اللوجستكس (LAs) في الفروع وفريق الفتح المركزي والمديرين.</span>
+        </div>
+
+        <h4 style="margin: 12px 0 6px; color: var(--primary);">1️⃣ مسؤولو العمليات بالفروع (LAs):</h4>
+        <ul style="padding-right: 20px; margin: 0 0 10px;">
+          <li><b>إرسال الطلب:</b> اكتب اسمك، اختار فرعك (سيحفظه النظام تلقائياً للطلبات التالية)، اكتب اسم الطيار وكوده واضغط <b>إرسال طلب فتح الشيفت</b>.</li>
+          <li><b>متابعة طلباتك:</b> اضغط على تبويب <b>📋 طلباتي</b> لمعرفة حالة كل طيار أرسلته (قيد الانتظار ⏳ / تم الفتح 🟢 / مرفوض 🔴 مع ذكر السبب).</li>
+          <li><b>صوت الإشعار:</b> يدق التطبيق رنة تأكيد نون فور إرسال الطلب بنجاح.</li>
+        </ul>
+
+        <h4 style="margin: 12px 0 6px; color: var(--success);">2️⃣ فريق الفتح والديسباتش (Shift Openers):</h4>
+        <ul style="padding-right: 20px; margin: 0 0 10px;">
+          <li><b>تسجيل الدخول:</b> اضغط على <b>🔑 دخول فريق العمل</b> وأدخل الكود المعتمد: <code>5821</code>.</li>
+          <li><b>استلام الطلبات:</b> يدق إشعار نون فور وصول أي طلب فتح شيفت جديد لحظياً مع إشعار نظام.</li>
+          <li><b>الفتح والرفض:</b> ضغطة واحدة على <b>✓ تم الفتح</b> لفتح الشيفت وبدء عداد الـ 11 ساعة، أو <b>✕ رفض</b> مع اختيار سبب الرفض.</li>
+          <li><b>متابعة الشيفتات النشطة:</b> تبويب <b>⏱ الشيفتات النشطة</b> يراقب عداد الـ 11 ساعة لكل طيار ويعطي تنبيهاً مرئياً عند انتهائها.</li>
+        </ul>
+
+        <h4 style="margin: 12px 0 6px; color: #b45309;">3️⃣ الإدارة العليا والمتابعة العامة (Managers):</h4>
+        <ul style="padding-right: 20px; margin: 0 0 10px;">
+          <li><b>دخول المدير:</b> اضغط على <b>👑 دخول المدير</b> وأدخل كود المرور الخاص: <code>7700</code>.</li>
+          <li><b>لوحة المدير المعزولة:</b> تعرض أسطول الفروع الـ 30 مع عدد الطيارين النشطين في كل فرع، إجمالي طلبات اليوم، ونسبة الالتزام بالـ 11 ساعة.</li>
+          <li><b>تصدير التقارير:</b> زر <b>تصدير CSV</b> لتنزيل ملفات شيت متوافقة مع الإكسيل لجرد الشيفتات اليومية.</li>
+        </ul>
+
+        <div style="background: var(--primary-light); color: var(--primary); padding: 10px 14px; border-radius: var(--radius-sm); margin-top: 14px; font-size: 13px;">
+          💡 <b>نصيحة للموبايل:</b> يمكنك الضغط على خيارات المتصفح واختيار <b>"إضافة إلى الشاشة الرئيسية (Add to Home Screen)"</b> لتثبيت التطبيق كبرنامج دائم على شاشة الهاتف.
+        </div>
+      </div>
+      <div style="margin-top: 18px; text-align: left;">
+        <button class="btn btn-primary" onclick="$('modal-branch-guide').classList.add('hidden')">فهمت، إغلاق الدليل</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
